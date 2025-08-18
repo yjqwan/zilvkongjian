@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自律空间 - 首页</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#F59E0B',
+                        dark: '#1F2937',
+                        light: '#F3F4F6'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+            }
+            .nav-shadow {
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- 主内容区 -->
+    <main class="flex-grow px-4 py-6">
+        <!-- 欢迎区域 -->
+        <div class="bg-gradient-to-r from-primary to-blue-400 rounded-2xl p-6 text-white mb-6">
+            <h1 class="text-[clamp(1.5rem,5vw,2.5rem)] font-bold mb-2">自律空间</h1>
+            <p class="text-blue-50">掌控时间，成就自我</p>
+        </div>
+        
+        <!-- 功能卡片 -->
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <a href="pomodoro.html" class="bg-white rounded-xl p-4 card-shadow transition-transform hover:scale-105">
+                <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-2">
+                    <i class="fa fa-clock-o text-red-500 text-xl"></i>
+                </div>
+                <h3 class="font-semibold">番茄钟</h3>
+                <p class="text-gray-500 text-sm">专注与休息的平衡</p>
+            </a>
+            
+            <a href="quadrant.html" class="bg-white rounded-xl p-4 card-shadow transition-transform hover:scale-105">
+                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-2">
+                    <i class="fa fa-th text-blue-500 text-xl"></i>
+                </div>
+                <h3 class="font-semibold">四象限</h3>
+                <p class="text-gray-500 text-sm">高效时间管理</p>
+            </a>
+            
+            <a href="todo.html" class="bg-white rounded-xl p-4 card-shadow transition-transform hover:scale-105">
+                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-2">
+                    <i class="fa fa-check-square-o text-green-500 text-xl"></i>
+                </div>
+                <h3 class="font-semibold">待办事项</h3>
+                <p class="text-gray-500 text-sm">任务清单管理</p>
+            </a>
+            
+            <a href="vocabulary.html" class="bg-white rounded-xl p-4 card-shadow transition-transform hover:scale-105">
+                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-2">
+                    <i class="fa fa-book text-purple-500 text-xl"></i>
+                </div>
+                <h3 class="font-semibold">单词学习</h3>
+                <p class="text-gray-500 text-sm">积累英语词汇</p>
+            </a>
+        </div>
+        
+        <!-- 修复习惯追踪的CSS问题 - 将其放在功能卡片网格中 -->
+        <div class="grid grid-cols-1 gap-4 mb-6">
+            <a href="habit.html" class="bg-white rounded-xl p-4 card-shadow transition-transform hover:scale-105">
+                <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-2">
+                    <i class="fa fa-calendar-check-o text-yellow-500 text-xl"></i>
+                </div>
+                <h3 class="font-semibold">习惯追踪</h3>
+                <p class="text-gray-500 text-sm">培养良好习惯</p>
+            </a>
+        </div>
+        
+        <!-- 今日概览 -->
+        <div class="bg-white rounded-xl p-5 card-shadow mb-6">
+            <h2 class="font-bold text-lg mb-4 flex items-center">
+                <i class="fa fa-bar-chart text-primary mr-2"></i>今日概览
+            </h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <div class="flex justify-between text-sm mb-1">
+                        <span>专注时间</span>
+                        <span id="today-focus-time">0分钟</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="focus-progress" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="flex justify-between text-sm mb-1">
+                        <span>完成任务</span>
+                        <span id="completed-tasks">0/0 项</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="tasks-progress" class="bg-secondary h-2 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="flex justify-between text-sm mb-1">
+                        <span>习惯养成</span>
+                        <span id="completed-habits">0/0 项</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="habits-progress" class="bg-accent h-2 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 快速添加 -->
+        <div class="bg-white rounded-xl p-5 card-shadow">
+            <h2 class="font-bold text-lg mb-4 flex items-center">
+                <i class="fa fa-plus-circle text-primary mr-2"></i>快速添加
+            </h2>
+            
+            <a href="todo.html#add-task" class="block w-full bg-gray-100 hover:bg-gray-200 rounded-lg p-3 mb-3 transition-colors">
+                <div class="flex items-center">
+                    <i class="fa fa-list-ul text-primary mr-3"></i>
+                    <span>添加待办任务</span>
+                </div>
+            </a>
+            
+            <a href="pomodoro.html" class="block w-full bg-gray-100 hover:bg-gray-200 rounded-lg p-3 transition-colors">
+                <div class="flex items-center">
+                    <i class="fa fa-play-circle text-primary mr-3"></i>
+                    <span>开始专注计时</span>
+                </div>
+            </a>
+        </div>
+    </main>
+
+    <!-- 底部导航栏 -->
+    <nav class="bg-white nav-shadow py-2 px-4 fixed bottom-0 left-0 right-0 z-10">
+        <div class="flex justify-around">
+            <a href="index.html" class="flex flex-col items-center py-1 text-primary">
+                <i class="fa fa-home text-xl"></i>
+                <span class="text-xs mt-1">首页</span>
+            </a>
+            <a href="pomodoro.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-clock-o text-xl"></i>
+                <span class="text-xs mt-1">番茄钟</span>
+            </a>
+            <a href="quadrant.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-th text-xl"></i>
+                <span class="text-xs mt-1">四象限</span>
+            </a>
+            <a href="todo.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-check-square-o text-xl"></i>
+                <span class="text-xs mt-1">待办</span>
+            </a>
+            <a href="vocabulary.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-book text-xl"></i>
+                <span class="text-xs mt-1">单词</span>
+            </a>
+            <a href="habit.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-calendar-check-o text-xl"></i>
+                <span class="text-xs mt-1">习惯</span>
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        // 确保内容不会被底部导航遮挡
+        document.addEventListener('DOMContentLoaded', function() {
+            const mainContent = document.querySelector('main');
+            const navHeight = document.querySelector('nav').offsetHeight;
+            mainContent.style.paddingBottom = `${navHeight + 20}px`;
+        });
+
+        // 更新统计数据
+        document.addEventListener('DOMContentLoaded', function() {
+            // 从本地存储加载番茄钟数据
+            function updatePomodoroStats() {
+                const data = localStorage.getItem('pomodoroData');
+                if (data) {
+                    const parsedData = JSON.parse(data);
+                    // 正确使用focusTimeToday字段，而不是不存在的totalFocusTime
+                    const focusTimeToday = parsedData.focusTimeToday || 0;
+                    const completedPomodoros = parsedData.completedPomodoros || 0;
+                    
+                    const focusTimeEl = document.getElementById('today-focus-time');
+                    const focusProgressEl = document.getElementById('focus-progress');
+
+                    // 更新专注时间
+                    focusTimeEl.textContent = `${Math.floor(focusTimeToday / 60)}分钟`;
+
+                    // 更新进度条 (假设目标是8小时专注时间)
+                    const targetFocusTime = 8 * 60 * 60; // 8小时
+                    const progress = Math.min((focusTimeToday / targetFocusTime) * 100, 100);
+                    focusProgressEl.style.width = `${progress}%`;
+                }
+            }
+
+            // 从本地存储加载任务和习惯数据
+            function updateTaskAndHabitStats() {
+                const tasksProgressEl = document.getElementById('tasks-progress');
+                const tasksEl = document.getElementById('completed-tasks');
+                const habitsProgressEl = document.getElementById('habits-progress');
+                const habitsEl = document.getElementById('completed-habits');
+
+                // 从localStorage加载任务数据
+                let totalTasks = 0;
+                let completedTasks = 0;
+                const studyGameData = localStorage.getItem('studyGameData');
+                if (studyGameData) {
+                    const data = JSON.parse(studyGameData);
+                    if (data.goals && Array.isArray(data.goals)) {
+                        // 只统计今日的任务
+                        const today = new Date().toISOString().split('T')[0];
+                        const todayGoals = data.goals.filter(goal => {
+                            return goal.deadline === today && goal.type === 'minor';
+                        });
+                        totalTasks = todayGoals.length;
+                        completedTasks = todayGoals.filter(goal => goal.completed).length;
+                    }
+                }
+
+                // 如果没有真实数据，使用默认值
+                if (totalTasks === 0) {
+                    totalTasks = 5;
+                    completedTasks = Math.floor(Math.random() * (totalTasks + 1));
+                }
+                
+                tasksEl.textContent = `${completedTasks}/${totalTasks} 项`;
+                tasksProgressEl.style.width = `${(completedTasks / totalTasks) * 100}%`;
+
+                // 从localStorage加载习惯数据
+                let totalHabits = 0;
+                let completedHabits = 0;
+                const habitTrackerHabits = localStorage.getItem('habitTrackerHabits');
+                if (habitTrackerHabits) {
+                    const habits = JSON.parse(habitTrackerHabits);
+                    if (habits && Array.isArray(habits)) {
+                        totalHabits = habits.length;
+                        const today = new Date().toISOString().split('T')[0];
+                        completedHabits = habits.filter(habit => 
+                            habit.completedDates && habit.completedDates.includes(today)
+                        ).length;
+                    }
+                }
+
+                // 如果没有真实数据，使用默认值
+                if (totalHabits === 0) {
+                    totalHabits = 3;
+                    completedHabits = Math.floor(Math.random() * (totalHabits + 1));
+                }
+                
+                habitsEl.textContent = `${completedHabits}/${totalHabits} 项`;
+                habitsProgressEl.style.width = `${(completedHabits / totalHabits) * 100}%`;
+            }
+
+            // 初始化
+            updatePomodoroStats();
+            updateTaskAndHabitStats();
+        });
+    </script>
+</body>
+</html>

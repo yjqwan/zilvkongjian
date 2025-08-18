@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>习惯</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#F59E0B',
+                        danger: '#EF4444',
+                        dark: '#1F2937',
+                        light: '#F3F4F6'
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .nav-shadow {
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            }
+            .habit-card {
+                transition: all 0.3s ease;
+            }
+            .habit-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
+            .streak-badge {
+                background: linear-gradient(135deg, #FFD700 0%, #DAA520 100%);
+            }
+            .calendar-day {
+                width: calc(100% / 7 - 6px);
+                aspect-ratio: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                font-size: 0.8rem;
+                transition: all 0.2s ease;
+            }
+            .calendar-day.completed {
+                background-color: var(--secondary);
+                color: white;
+            }
+            .calendar-day.current {
+                border: 2px solid var(--primary);
+                font-weight: bold;
+            }
+            .calendar-day.missed {
+                background-color: #f3d2c1;
+                color: #e67e22;
+            }
+        }
+    </style>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --accent: #f72585;
+            --success: #4cc9f0;
+            --warning: #fca311;
+            --light: #f8f9fa;
+            --dark: #2b2d42;
+            --gray: #8d99ae;
+            --light-gray: #edf2f4;
+            --border: #e9ecef;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #eef2f7 0%, #d9e4f5 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding-bottom: 70px; /* 为底部导航留出空间 */
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 15px;
+            gap: 20px;
+        }
+        
+        /* 头部样式 */
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 12px 20px;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+            color: #ffd43b;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .gold-display {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 6px 15px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+            font-size: 1rem;
+            min-width: auto;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .gold-display i {
+            color: gold;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+        }
+        
+        /* 主要内容区 */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        /* 左侧面板 - 习惯列表 */
+        .left-panel {
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .panel-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border);
+        }
+        
+        .panel-title h2 {
+            font-size: 1.4rem;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 6px rgba(67, 97, 238, 0.3);
+            font-size: 0.95rem;
+        }
+        
+        .btn:hover {
+            background: #3a56e4;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(67, 97, 238, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            box-shadow: 0 4px 6px rgba(76, 201, 240, 0.3);
+        }
+        
+        .btn-success:hover {
+            background: #3bc0e8;
+            box-shadow: 0 6px 8px rgba(76, 201, 240, 0.4);
+        }
+        
+        .btn-warning {
+            background: var(--warning);
+            box-shadow: 0 4px 6px rgba(252, 163, 17, 0.3);
+        }
+        
+        .btn-warning:hover {
+            background: #e69500;
+            box-shadow: 0 6px 8px rgba(252, 163, 17, 0.4);
+        }
+        
+        .btn-accent {
+            background: var(--accent);
+            box-shadow: 0 4px 6px rgba(247, 37, 133, 0.3);
+        }
+        
+        .btn-accent:hover {
+            background: #e51e76;
+            box-shadow: 0 6px 8px rgba(247, 37, 133, 0.4);
+        }
+        
+        /* 习惯列表 */
+        .habits-container {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+            max-height: 500px;
+        }
+        
+        .habit-item {
+            background: var(--light-gray);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .habit-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .habit-item.completed {
+            background: rgba(76, 201, 240, 0.1);
+            border-left-color: var(--success);
+        }
+        
+        .habit-info {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .habit-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        
+        .habit-details {
+            flex: 1;
+        }
+        
+        .habit-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+        }
+        
+        .habit-streak {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+        
+        .habit-streak .streak-value {
+            color: var(--primary);
+            font-weight: bold;
+        }
+        
+        .habit-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            background: none;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+        
+        .action-btn:hover {
+            color: var(--primary);
+            background: rgba(52, 152, 219, 0.1);
+        }
+        
+        /* 右侧面板 */
+        .right-panel {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .stats-section, .calendar-section {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 15px;
+        }
+        
+        .stat-card {
+            background: var(--light-gray);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 8px 0;
+        }
+        
+        .stat-label {
+            color: var(--gray);
+            font-size: 0.85rem;
+        }
+        
+        /* 日历 */
+        .calendar-container {
+            margin-top: 15px;
+        }
+        
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .calendar-nav {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .calendar-nav-btn {
+            background: var(--light-gray);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .calendar-nav-btn:hover {
+            background: var(--gray);
+            color: white;
+        }
+        
+        .calendar-weekdays {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+            color: var(--gray);
+            font-weight: 600;
+        }
+        
+        .calendar-days {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        
+        /* 添加习惯表单 */
+        .add-form {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-top: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.95rem;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+        
+        .form-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        /* 通知 */
+        .notification {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            max-width: 90%;
+            font-size: 0.95rem;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            border-left: 4px solid var(--success);
+        }
+        
+        .notification.error {
+            border-left: 4px solid var(--accent);
+        }
+        
+        .notification.warning {
+            border-left: 4px solid var(--warning);
+        }
+        
+        /* 庆祝动画 */
+        .confetti {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes confetti-side {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) translateX(50px) rotate(720deg);
+                opacity: 0;
+            }
+        }
+        
+        /* 移动端适配 */
+        @media (min-width: 768px) {
+            .container {
+                padding: 0 20px;
+            }
+            
+            .main-content {
+                flex-direction: row;
+            }
+            
+            .left-panel {
+                flex: 1;
+                min-width: 300px;
+            }
+            
+            .right-panel {
+                width: 350px;
+                min-width: 300px;
+            }
+            
+            .header-content {
+                flex-direction: row;
+                text-align: left;
+            }
+        }
+        
+        /* 移动端优化类 */
+        .mobile-flex {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .mobile-btn-text {
+            display: none;
+        }
+        
+        @media (max-width: 480px) {
+            .btn {
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+            
+            .btn i {
+                margin-right: 0;
+            }
+            
+            .mobile-btn-text {
+                display: inline;
+            }
+            
+            .desktop-btn-text {
+                display: none;
+            }
+            
+            .gold-display {
+                padding: 6px 12px;
+                font-size: 0.9rem;
+            }
+            
+            .form-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 通知区域 -->
+    <div id="notification-area"></div>
+    
+    <!-- 页面头部 -->
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                <i class="fa fa-crown"></i>
+                <span>习惯培养</span>
+            </div>
+            <div class="user-info">
+                <div class="gold-display">
+                    <i class="fa fa-coins"></i>
+                    <span id="gold-amount">0</span> 金币
+                </div>
+                <div class="user">
+                    <i class="fa fa-user-circle"></i> <span id="username">学习者</span>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="main-content">
+            <!-- 左侧面板：习惯列表 -->
+            <div class="left-panel">
+                <div class="panel-title">
+                    <h2><i class="fa fa-calendar-check-o"></i> 习惯追踪</h2>
+                    <button class="btn" id="add-habit-btn">
+                        <i class="fa fa-plus"></i>
+                        <span class="desktop-btn-text">添加习惯</span>
+                        <span class="mobile-btn-text">添加</span>
+                    </button>
+                </div>
+                
+                <div class="habits-container" id="habits-container">
+                    <!-- 习惯慣將由JavaScript动态生成 -->
+                </div>
+                
+                <!-- 添加添加习惯表单 -->
+                <div class="add-form" id="add-form" style="display: none;">
+                    <div class="form-group">
+                        <label for="habit-name">习惯名称</label>
+                        <input type="text" class="form-control" id="habit-name" placeholder="输入习惯内容...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="habit-icon">选择图标</label>
+                        <select class="form-control" id="habit-icon">
+                            <option value="book">📚 阅读</option>
+                            <option value="dumbbell">🏋️ 锻炼</option>
+                            <option value="heartbeat">🧘 冥想</option>
+                            <option value="glass">💧 喝水</option>
+                            <option value="sun-o">🌞 早起</option>
+                            <option value="moon-o">🌙 早睡</option>
+                            <option value="code">💻 编程</option>
+                            <option value="language">📝 写作</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="habit-reward">完成奖励金币</label>
+                        <input type="number" class="form-control" id="habit-reward" placeholder="输入完成后的奖励金币数" min="1" max="100" value="10">
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button class="btn" id="save-habit-btn" style="flex: 1;">
+                            <i class="fa fa-check"></i> 保存习惯
+                        </button>
+                        <button class="btn btn-accent" id="cancel-habit-btn" style="flex: 1;">
+                            <i class="fa fa-times"></i> 取消
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右侧面板：统计和日历 -->
+            <div class="right-panel">
+                <!-- 统计和进度 -->
+                <div class="stats-section">
+                    <div class="panel-title">
+                        <h2><i class="fa fa-chart-line"></i> 习惯统计</h2>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <i class="fa fa-calendar-check-o fa-2x"></i>
+                            <div class="stat-value" id="total-habits">0</div>
+                            <div class="stat-label">总习惯数</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <i class="fa fa-check-circle fa-2x"></i>
+                            <div class="stat-value" id="completed-today">0</div>
+                            <div class="stat-label">今日已完成</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <i class="fa fa-fire fa-2x"></i>
+                            <div class="stat-value" id="longest-streak">0</div>
+                            <div class="stat-label">最长连续天数</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <i class="fa fa-trophy fa-2x"></i>
+                            <div class="stat-value" id="completed-total">0</div>
+                            <div class="stat-label">总计完成次数</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 习惯日历 -->
+                <div class="calendar-section">
+                    <div class="panel-title">
+                        <h2><i class="fa fa-calendar"></i> 习惯日历</h2>
+                    </div>
+                    
+                    <div class="calendar-container">
+                        <div class="calendar-header">
+                            <h3 id="current-month"></h3>
+                            <div class="calendar-nav">
+                                <button class="calendar-nav-btn" id="prev-month">
+                                    <i class="fa fa-chevron-left"></i>
+                                </button>
+                                <button class="calendar-nav-btn" id="next-month">
+                                    <i class="fa fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="calendar-weekdays">
+                            <div>日</div>
+                            <div>一</div>
+                            <div>二</div>
+                            <div>三</div>
+                            <div>四</div>
+                            <div>五</div>
+                            <div>六</div>
+                        </div>
+                        
+                        <div class="calendar-days" id="calendar-days">
+                            <!-- 日历日期将由JavaScript动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 数据结构与持久化存储
+        let userData = {
+            gold: 0,
+            completedTotal: 0,
+            lastLogin: new Date().toISOString()
+        };
+        
+        let habits = [];
+        
+        // DOM 元素
+        const habitsContainer = document.getElementById('habits-container');
+        const goldAmountElement = document.getElementById('gold-amount');
+        const addHabitBtn = document.getElementById('add-habit-btn');
+        const addForm = document.getElementById('add-form');
+        const habitNameInput = document.getElementById('habit-name');
+        const habitIconSelect = document.getElementById('habit-icon');
+        const habititRewardInput = document.getElementById('habit-reward');
+        const saveHabitBtn = document.getElementById('save-habit-btn');
+        const cancelHabitBtn = document.getElementById('cancel-habit-btn');
+        const notificationArea = document.getElementById('notification-area');
+        const totalHabitsElement = document.getElementById('total-habits');
+        const completedTodayElement = document.getElementById('completed-today');
+        const longestStreakElement = document.getElementById('longest-streak');
+        const completedTotalElement = document.getElementById('completed-total');
+        const currentMonthElement = document.getElementById('current-month');
+        const prevMonthBtn = document.getElementById('prev-month');
+        const nextMonthBtn = document.getElementById('next-month');
+        const calendarDaysElement = document.getElementById('calendar-days');
+        
+        // 当前日历年月
+        let currentDate = new Date();
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 从localStorage加载数据
+            loadData();
+            
+            // 强制检查日期并重置状态，解决日期不更新问题
+            forceCheckAndResetDailyStatus();
+            
+            renderHabits();
+            updateStats();
+            renderCalendar(currentDate.getFullYear(), currentDate.getMonth());
+            
+            // 事件监听
+            addHabitBtn.addEventListener('click', toggleAddForm);
+            cancelHabitBtn.addEventListener('click', toggleAddForm);
+            saveHabitBtn.addEventListener('click', saveHabit);
+            prevMonthBtn.addEventListener('click', prevMonth);
+            nextMonthBtn.addEventListener('click', nextMonth);
+            
+            // 计算距离午夜的毫秒数，设置定时器在午夜自动更新
+            const now = new Date();
+            const midnight = new Date(now);
+            midnight.setHours(24, 0, 0, 0);
+            const timeToMidnight = midnight - now;
+            
+            // 午夜重置一次
+            setTimeout(() => {
+                forceCheckAndResetDailyStatus();
+                // 之后每天检查一次
+                setInterval(forceCheckAndResetDailyStatus, 86400000); // 86400000毫秒 = 24小时
+            }, timeToMidnight);
+        });
+        
+        // 获取格式化的日期字符串（YYYY-MM-DD）
+        function getFormattedDate(date = new Date()) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        // 从localStorage加载数据
+        function loadData() {
+            const savedUserData = localStorage.getItem('habitTrackerUserData');
+            const savedHabits = localStorage.getItem('habitTrackerHabits');
+            
+            if (savedUserData) {
+                userData = JSON.parse(savedUserData);
+            }
+            
+            if (savedHabits) {
+                habits = JSON.parse(savedHabits);
+            } else {
+                // 初始化一些示例数据
+                const today = getFormattedDate();
+                const yesterday = getFormattedDate(new Date(Date.now() - 86400000));
+                const twoDaysAgo = getFormattedDate(new Date(Date.now() - 2 * 86400000));
+                const threeDaysAgo = getFormattedDate(new Date(Date.now() - 3 * 86400000));
+                
+                habits = [
+                    {
+                        id: 1,
+                        name: "每日阅读30分钟",
+                        icon: "book",
+                        streak: 3,
+                        reward: 10,
+                        completed: false,
+                        history: [
+                            { date: today, completed: false },
+                            { date: yesterday, completed: true },
+                            { date: twoDaysAgo, completed: true },
+                            { date: threeDaysAgo, completed: true }
+                        ]
+                    },
+                    {
+                        id: 2,
+                        name: "每日锻炼15分钟",
+                        icon: "dumbbell",
+                        streak: 2,
+                        reward: 15,
+                        completed: false,
+                        history: [
+                            { date: today, completed: false },
+                            { date: yesterday, completed: true },
+                            { date: twoDaysAgo, completed: true }
+                        ]
+                    }
+                ];
+                
+                saveData();
+            }
+        }
+        
+        // 保存数据到localStorage
+        function saveData() {
+            localStorage.setItem('habitTrackerUserData', JSON.stringify(userData));
+            localStorage.setItem('habitTrackerHabits', JSON.stringify(habits));
+        }
+        
+        // 增强版：强制检查并重置每日状态，确保日期变更时正确更新
+        function forceCheckAndResetDailyStatus() {
+            // 获取当前日期（仅日期部分）
+            const today = getFormattedDate();
+            
+            // 确保lastLogin存在
+            if (!userData.lastLogin) {
+                userData.lastLogin = today;
+                saveData();
+                return;
+            }
+            
+            // 获取上次登录日期（仅日期部分）
+            const lastLoginDate = getFormattedDate(new Date(userData.lastLogin));
+
+            // 如果上次登录是昨天或更早，则重置所有习惯的当天完成状态
+            if (lastLoginDate !== today) {
+                // 显示日期变更通知
+                showNotification(`已更新至${formatDateForDisplay(today)}`, 'success');
+                
+                habits.forEach(habit => {
+                    // 检查是否有今天的记录
+                    const todayEntry = habit.history.find(h => h.date === today);
+                    if (!todayEntry) {
+                        habit.history.push({ date: today, completed: false });
+                    } else {
+                        // 强制重置今天的完成状态为未完成
+                        todayEntry.completed = false;
+                    }
+                    // 确保习惯对象的completed属性也被重置
+                    habit.completed = false;
+
+                    // 更新连续天数
+                    updateHabitStreak(habit);
+                });
+
+                // 更新最后登录时间
+                userData.lastLogin = new Date().toISOString();
+                saveData();
+
+                // 重新渲染习惯和统计数据
+                renderHabits();
+                updateStats();
+                renderCalendar(currentDate.getFullYear(), currentDate.getMonth());
+            }
+        }
+        
+        // 格式化日期为友好显示格式
+        function formatDateForDisplay(dateStr) {
+            const date = new Date(dateStr);
+            return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+        }
+        
+        // 修复后的连续天数计算方法 - 解决点击完成后连续天数变为0的问题
+        function updateHabitStreak(habit) {
+            // 复制历史记录并按日期降序排序（最新的在前）
+            const sortedHistory = [...habit.history].sort((a, b) => 
+                new Date(b.date) - new Date(a.date)
+            );
+            
+            const today = getFormattedDate();
+            let currentStreak = 0;
+            let previousDate = null;
+            
+            // 遍历所有记录，计算当前连续天数
+            for (const entry of sortedHistory) {
+                const entryDate = new Date(entry.date);
+                
+                // 如果这一天完成了
+                if (entry.completed) {
+                    // 第一次遇到完成的记录
+                    if (currentStreak === 0) {
+                        currentStreak = 1;
+                        previousDate = entryDate;
+                    } else {
+                        // 计算与前一天的差距（以天为单位）
+                        const timeDiff = previousDate - entryDate;
+                        const dayDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+                        
+                        // 允许差距为1天（连续）或0天（同一天的重复记录）
+                        if (dayDiff === 1 || dayDiff === 0) {
+                            // 只有差距为1天时才增加连续天数（避免同一天重复计数）
+                            if (dayDiff === 1) {
+                                currentStreak++;
+                            }
+                            previousDate = entryDate;
+                        } 
+                        // 不连续，结束计算
+                        else {
+                            break;
+                        }
+                    }
+                } 
+                // 如果遇到未完成的记录且已经有连续记录
+                else if (currentStreak > 0) {
+                    // 即使是今天未完成，只要之前有连续记录，就保持当前连续天数
+                    // （只有非今天的未完成记录才会中断连续）
+                    if (entry.date !== today) {
+                        currentStreak = 0;
+                        break;
+                    }
+                }
+            }
+            
+            // 更新习惯的连续天数
+            habit.streak = currentStreak;
+        }
+        
+        // 计算全局最长连续天数（所有习惯中最大的连续记录）
+        function calculateLongestStreak() {
+            let globalLongest = 0;
+            
+            // 先更新所有习惯的连续天数
+            habits.forEach(habit => {
+                updateHabitStreak(habit);
+                if (habit.streak > globalLongest) {
+                    globalLongest = habit.streak;
+                }
+            });
+            
+            return globalLongest;
+        }
+        
+        // 渲染习惯列表
+        function renderHabits() {
+            habitsContainer.innerHTML = '';
+            
+            if (habits.length === 0) {
+                habitsContainer.innerHTML = `
+                    <div class="empty-state flex flex-col items-center justify-center py-10 text-gray-500">
+                        <i class="fa fa-calendar-check-o text-4xl mb-3"></i>
+                        <p>还没有添加习惯，点击上方按钮添加</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            habits.forEach(habit => {
+                const habitElement = document.createElement('div');
+                habitElement.className = `habit-item ${habit.completed ? 'completed' : ''}`;
+                habitElement.innerHTML = `
+                    <div class="habit-info">
+                        <div class="habit-icon">
+                            <i class="fa fa-${habit.icon}"></i>
+                        </div>
+                        <div class="habit-details">
+                            <div class="habit-name">${habit.name}</div>
+                            <div class="habit-streak">
+                                已连续坚持 <span class="streak-value">${habit.streak}</span> 天
+                                ${habit.streak >= 7 ? `<span class="text-warning">🏆 了不起！</span>` : 
+                                  habit.streak > 1 ? `<span class="text-success">🔥 保持住！</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="habit-actions">
+                        <button class="btn btn-success complete-habit-btn" data-id="${habit.id}" ${habit.completed ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
+                            <i class="fa fa-check"></i>
+                        </button>
+                        <button class="action-btn edit-habit-btn" data-id="${habit.id}">
+                            <i class="fa fa-pencil"></i>
+                        </button>
+                        <button class="action-btn delete-habit-btn" data-id="${habit.id}">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                habitsContainer.appendChild(habitElement);
+            });
+            
+            // 添加事件监听
+            document.querySelectorAll('.complete-habit-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    completeHabit(id);
+                });
+            });
+            
+            document.querySelectorAll('.edit-habit-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    editHabit(id);
+                });
+            });
+            
+            document.querySelectorAll('.delete-habit-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    deleteHabit(id);
+                });
+            });
+        }
+        
+        // 更新统计数据
+        function updateStats() {
+            // 总习惯数
+            totalHabitsElement.textContent = habits.length;
+            
+            // 今日已完成
+            let completedToday = 0;
+            habits.forEach(habit => {
+                if (habit.completed) {
+                    completedToday++;
+                }
+            });
+            completedTodayElement.textContent = completedToday;
+            
+            // 最长连续天数（所有习惯中的最大值）
+            const longestStreak = calculateLongestStreak();
+            longestStreakElement.textContent = longestStreak;
+            
+            // 更新金币显示
+            goldAmountElement.textContent = userData.gold;
+            
+            // 更新完成总数
+            completedTotalElement.textContent = userData.completedTotal;
+        }
+        
+        // 渲染日历
+        function renderCalendar(year, month) {
+            // 获取当前日期以确保显示正确的月份
+            const today = new Date();
+            if (!year || month === undefined) {
+                year = today.getFullYear();
+                month = today.getMonth();
+            }
+
+            // 更新currentDate变量以确保显示正确的月份
+            currentDate = new Date(year, month);
+
+            currentMonthElement.textContent = `${year}年${month + 1}月`;
+            calendarDaysElement.innerHTML = '';
+            
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startDay = firstDay.getDay(); // 一周中的第几天，0是星期日
+            const daysInMonth = lastDay.getDate();
+            const todayStr = getFormattedDate(today);
+            
+            // 获取这个月所有日期的记录状态
+            const monthDateStatus = {};
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dateStr = getFormattedDate(new Date(year, month, i));
+                monthDateStatus[dateStr] = {
+                    completed: false,
+                    totalHabits: 0,
+                    completedHabits: 0
+                };
+            }
+            
+            // 统计每天的习惯完成情况
+            habits.forEach(habit => {
+                habit.history.forEach(entry => {
+                    const entryDate = new Date(entry.date);
+                    // 只统计当月的日期
+                    if (entryDate.getFullYear() === year && entryDate.getMonth() === month) {
+                        const dateStr = entry.date;
+                        if (monthDateStatus[dateStr]) {
+                            monthDateStatus[dateStr].totalHabits++;
+                            if (entry.completed) {
+                                monthDateStatus[dateStr].completedHabits++;
+                                monthDateStatus[dateStr].completed = true;
+                            }
+                        }
+                    }
+                });
+            });
+            
+            // 添加上个月的空白日期
+            for (let i = 0; i < startDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day';
+                calendarDaysElement.appendChild(emptyDay);
+            }
+            
+            // 添加当月日期
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayElement = document.createElement('div');
+                const date = new Date(year, month, i);
+                const dateStr = getFormattedDate(date);
+                const status = monthDateStatus[dateStr];
+                
+                // 计算完成率
+                const completionRate = status.totalHabits > 0 ? 
+                    status.completedHabits / status.totalHabits : 0;
+                
+                // 设置日历样式
+                let dayClasses = 'calendar-day';
+                if (dateStr === todayStr) {
+                    dayClasses += ' current';
+                }
+                
+                // 根据完成率设置不同的样式
+                if (status.totalHabits > 0) {
+                    if (completionRate === 1) {
+                        dayClasses += ' completed';
+                    } else if (completionRate > 0) {
+                        dayClasses += ' bg-blue-100 text-blue-800';
+                    } else if (completionRate === 0) {
+                        dayClasses += ' missed';
+                    }
+                }
+                
+                dayElement.className = dayClasses;
+                dayElement.textContent = i;
+                
+                // 添加 tooltip 显示详细信息
+                if (status.totalHabits > 0) {
+                    dayElement.title = `${dateStr}: 完成 ${status.completedHabits}/${status.totalHabits} 个习惯`;
+                }
+                
+                calendarDaysElement.appendChild(dayElement);
+            }
+        }
+        
+        // 切换添加表单显示
+        function toggleAddForm() {
+            addForm.style.display = addForm.style.display === 'none' ? 'block' : 'none';
+            
+            if (addForm.style.display === 'block') {
+                habitNameInput.value = '';
+                habitIconSelect.value = 'book';
+                habitRewardInput.value = '10';
+                saveHabitBtn.setAttribute('data-id', '');
+            }
+        }
+        
+        // 保存习惯
+        function saveHabit() {
+            const name = habitNameInput.value.trim();
+            const icon = habitIconSelect.value;
+            const reward = parseInt(habitRewardInput.value);
+            const id = parseInt(saveHabitBtn.getAttribute('data-id'));
+            
+            if (!name) {
+                showNotification('请输入习惯名称', 'error');
+                return;
+            }
+            
+            if (isNaN(reward) || reward < 1 || reward > 100) {
+                showNotification('奖励金币数必须在1-100之间', 'error');
+                return;
+            }
+            
+            if (id) {
+                // 编辑现有习惯
+                const habitIndex = habits.findIndex(h => h.id === id);
+                if (habitIndex !== -1) {
+                    habits[habitIndex].name = name;
+                    habits[habitIndex].icon = icon;
+                    habits[habitIndex].reward = reward;
+                    showNotification('习惯已更新', 'success');
+                }
+            } else {
+                // 添加新习惯
+                const today = getFormattedDate();
+                const newHabit = {
+                    id: Date.now(),
+                    name: name,
+                    icon: icon,
+                    streak: 0,
+                    reward: reward,
+                    completed: false,
+                    history: [{ date: today, completed: false }]
+                };
+                
+                habits.push(newHabit);
+                showNotification('新习惯已添加', 'success');
+            }
+            
+            renderHabits();
+            updateStats();
+            toggleAddForm();
+            saveData();
+        }
+        
+        // 完成习惯
+        function completeHabit(id) {
+            const habit = habits.find(h => h.id === id);
+            if (habit && !habit.completed) {
+                habit.completed = true;
+                
+                // 更新历史记录
+                const todayStr = getFormattedDate();
+                const todayEntry = habit.history.find(h => h.date === todayStr);
+                if (todayEntry) {
+                    todayEntry.completed = true;
+                } else {
+                    habit.history.push({ date: todayStr, completed: true });
+                }
+                
+                // 更新连续天数
+                updateHabitStreak(habit);
+                
+                // 增加金币
+                addGold(habit.reward);
+                
+                // 增加完成总数
+                userData.completedTotal++;
+                
+                // 检查是否创建了新的连续记录
+                if (habit.streak % 7 === 0 && habit.streak > 0) {
+                    showNotification(`太棒了！${habit.name}已连续坚持${habit.streak}天，额外奖励5金币！`, 'success');
+                    addGold(5); // 每连续7天额外奖励5金币
+                } else {
+                    showNotification(`恭喜！已完成${habit.name}，获得${habit.reward}金币！`, 'success');
+                }
+                
+                // 创建庆祝效果
+                createCelebration();
+                
+                renderHabits();
+                updateStats();
+                renderCalendar(currentDate.getFullYear(), currentDate.getMonth());
+                saveData();
+            }
+        }
+        
+        // 编辑习惯
+        function editHabit(id) {
+            const habit = habits.find(h => h.id === id);
+            if (habit) {
+                habitNameInput.value = habit.name;
+                habitIconSelect.value = habit.icon;
+                habitRewardInput.value = habit.reward;
+                saveHabitBtn.setAttribute('data-id', id);
+                addForm.style.display = 'block';
+            }
+        }
+        
+        // 删除习惯
+        function deleteHabit(id) {
+            if (confirm('确定要删除这个习惯吗？所有历史记录也将被删除。')) {
+                habits = habits.filter(h => h.id !== id);
+                showNotification('习惯已删除', 'success');
+                renderHabits();
+                updateStats();
+                renderCalendar(currentDate.getFullYear(), currentDate.getMonth());
+                saveData();
+            }
+        }
+        
+        // 上个月
+        function prevMonth() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar(currentDate.getFullYear(), currentDate.getMonth());
+        }
+        
+        // 下个月
+        function nextMonth() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar(currentDate.getFullYear(), currentDate.getMonth());
+        }
+        
+        // 添加金币
+        function addGold(amount) {
+            userData.gold += amount;
+            updateGoldDisplay();
+        }
+        
+        // 更新金币显示
+        function updateGoldDisplay() {
+            goldAmountElement.textContent = userData.gold;
+        }
+        
+        // 显示通知
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fa fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            
+            notificationArea.appendChild(notification);
+            
+            // 显示通知
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 10);
+            
+            // 3秒后移除
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, 3000);
+        }
+        
+        // 创建庆祝动画
+        function createCelebration() {
+            // 创建彩带效果
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                
+                // 随机颜色
+                const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                
+                // 随机位置
+                confetti.style.left = `${Math.random() * 100}vw`;
+                confetti.style.top = '0';
+                
+                // 随机大小
+                const size = Math.random() * 10 + 5;
+                confetti.style.width = `${size}px`;
+                confetti.style.height = `${size}px`;
+                
+                // 随机动画
+                const animation = Math.random() > 0.5 ? 'confetti-fall' : 'confetti-side';
+                confetti.style.animation = `${animation} ${Math.random() * 3 + 2}s linear forwards`;
+                
+                document.body.appendChild(confetti);
+                
+                // 动画结束后移除元素
+                setTimeout(() => {
+                    confetti.remove();
+                }, 5000);
+            }
+        }
+    </script>
+    
+    <!-- 底部导航栏 -->
+    <nav class="bg-white nav-shadow py-2 px-4 fixed bottom-0 left-0 right-0 z-10">
+        <div class="flex justify-around">
+            <a href="index.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-home text-xl"></i>
+                <span class="text-xs mt-1">首页</span>
+            </a>
+            <a href="pomodoro.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-clock-o text-xl"></i>
+                <span class="text-xs mt-1">番茄钟</span>
+            </a>
+            <a href="quadrant.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-th text-xl"></i>
+                <span class="text-xs mt-1">四象限</span>
+            </a>
+            <a href="todo.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-check-square-o text-xl"></i>
+                <span class="text-xs mt-1">待办</span>
+            </a>
+            <a href="vocabulary.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-book text-xl"></i>
+                <span class="text-xs mt-1">单词</span>
+            </a>
+            <a href="habit.html" class="flex flex-col items-center py-1 text-primary">
+                <i class="fa fa-calendar-check-o text-xl"></i>
+                <span class="text-xs mt-1">习惯</span>
+            </a>
+        </div>
+    </nav>
+</body>
+</html>
+    

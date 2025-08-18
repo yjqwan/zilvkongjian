@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>积分制待办 - 学习版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#F59E0B',
+                        danger: '#EF4444',
+                        dark: '#1F2937',
+                        light: '#F3F4F6'
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .nav-shadow {
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            }
+        }
+    </style>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Noto Sans SC', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --accent: #f72585;
+            --success: #4cc9f0;
+            --warning: #fca311;
+            --light: #f8f9fa;
+            --dark: #2b2d42;
+            --gray: #8d99ae;
+            --light-gray: #edf2f4;
+            --border: #e9ecef;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --gold: linear-gradient(135deg, #FFD700 0%, #DAA520 100%);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #eef2f7 0%, #d9e4f5 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-bottom: 40px;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 15px;
+            gap: 20px;
+        }
+        
+        /* 头部样式 */
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 12px 20px;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+            color: #ffd43b;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .gold-display {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 6px 15px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+            font-size: 1rem;
+            min-width: auto;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .gold-display i {
+            color: gold;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+        }
+        
+        /* 主要内容区 */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        /* 左侧面板 - 待办事项 */
+        .left-panel {
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .panel-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border);
+        }
+        
+        .panel-title h2 {
+            font-size: 1.4rem;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 6px rgba(67, 97, 238, 0.3);
+            font-size: 0.95rem;
+        }
+        
+        .btn:hover {
+            background: #3a56e4;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(67, 97, 238, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            box-shadow: 0 4px 6px rgba(76, 201, 240, 0.3);
+        }
+        
+        .btn-success:hover {
+            background: #3bc0e8;
+            box-shadow: 0 6px 8px rgba(76, 201, 240, 0.4);
+        }
+        
+        .btn-warning {
+            background: var(--warning);
+            box-shadow: 0 4px 6px rgba(252, 163, 17, 0.3);
+        }
+        
+        .btn-warning:hover {
+            background: #e69500;
+            box-shadow: 0 6px 8px rgba(252, 163, 17, 0.4);
+        }
+        
+        .btn-accent {
+            background: var(--accent);
+            box-shadow: 0 4px 6px rgba(247, 37, 133, 0.3);
+        }
+        
+        .btn-accent:hover {
+            background: #e51e76;
+            box-shadow: 0 6px 8px rgba(247, 37, 133, 0.4);
+        }
+        
+        /* 待办事项列表 */
+        .todos-container {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+            max-height: 500px;
+        }
+        
+        .major-todo {
+            background: var(--light-gray);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .major-todo:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .major-todo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .major-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .major-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            width: 100%;
+        }
+        
+        .minor-todos {
+            margin-top: 12px;
+        }
+        
+        .minor-todo {
+            display: flex;
+            align-items: center;
+            background: white;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+        }
+        
+        .minor-todo:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        .minor-todo input[type="checkbox"] {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--success);
+        }
+        
+        .minor-title {
+            flex: 1;
+            font-size: 1rem;
+        }
+        
+        .completed .minor-title {
+            text-decoration: line-through;
+            color: var(--gray);
+        }
+        
+        .minor-actions {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .action-btn {
+            background: none;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+        
+        .action-btn:hover {
+            color: var(--primary);
+            background: rgba(52, 152, 219, 0.1);
+        }
+        
+        /* 右侧面板 */
+        .right-panel {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .rewards-section, .stats-section, .history-section {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .history-content {
+            max-height: 250px;
+            overflow-y: auto;
+            margin-top: 12px;
+        }
+        
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.95rem;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .history-reward {
+            font-weight: 600;
+        }
+        
+        .history-details {
+            color: var(--gray);
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        
+        .rewards-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-top: 15px;
+        }
+        
+        .reward-card {
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .reward-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow);
+        }
+        
+        .reward-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .reward-title {
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+        
+        .reward-cost {
+            background: var(--gold);
+            color: var(--dark);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            min-width: 70px;
+            text-align: center;
+        }
+        
+        .reward-desc {
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 15px;
+        }
+        
+        .stat-card {
+            background: var(--light-gray);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 8px 0;
+        }
+        
+        .stat-label {
+            color: var(--gray);
+            font-size: 0.85rem;
+        }
+        
+        /* 添加表单 */
+        .add-form {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-top: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.95rem;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+        
+        .form-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        /* 通知 */
+        .notification {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            max-width: 90%;
+            font-size: 0.95rem;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            border-left: 4px solid var(--success);
+        }
+        
+        .notification.error {
+            border-left: 4px solid var(--accent);
+        }
+        
+        .notification.warning {
+            border-left: 4px solid var(--warning);
+        }
+        
+        /* 移动端适配 */
+        @media (min-width: 768px) {
+            .container {
+                padding: 0 20px;
+            }
+            
+            .main-content {
+                flex-direction: row;
+            }
+            
+            .left-panel {
+                flex: 1;
+                min-width: 300px;
+            }
+            
+            .right-panel {
+                width: 350px;
+                min-width: 300px;
+            }
+            
+            .header-content {
+                flex-direction: row;
+                text-align: left;
+            }
+            
+            .major-actions {
+                width: auto;
+                justify-content: flex-end;
+            }
+            
+            .rewards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (min-width: 992px) {
+            .rewards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* 动画效果 */
+        @keyframes coinAnimation {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .coin-effect {
+            position: absolute;
+            color: gold;
+            font-size: 1.5rem;
+            animation: coinAnimation 1s forwards;
+            z-index: 50;
+        }
+        
+        /* 完成效果 */
+        @keyframes completeAnimation {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        
+        .completing {
+            animation: completeAnimation 0.5s forwards;
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 20px;
+            color: var(--gray);
+        }
+        
+        .empty-state i {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+        
+        /* 庆祝动画 */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #f00;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        @keyframes confetti-fall {
+            0% { transform: translateY(0) rotate(0); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+        
+        @keyframes confetti-side {
+            0% { transform: translateY(0) translateX(0) rotate(0); opacity: 1; }
+            100% { transform: translateY(50vh) translateX(100px) rotate(360deg); opacity: 0; }
+        }
+        
+        @keyframes fireworks {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+        
+        .firework {
+            position: fixed;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        .celebration-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px 30px;
+            border-radius: 16px;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 2000;
+            text-align: center;
+        }
+        
+        .celebration-message.show {
+            animation: celebration-popup 1.5s forwards;
+        }
+        
+        @keyframes celebration-popup {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            70% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+        }
+        
+        /* 移动端优化类 */
+        .mobile-flex {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .mobile-btn-text {
+            display: none;
+        }
+        
+        @media (max-width: 480px) {
+            .btn {
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+            
+            .btn i {
+                margin-right: 0;
+            }
+            
+            .mobile-btn-text {
+                display: inline;
+            }
+            
+            .desktop-btn-text {
+                display: none;
+            }
+            
+            .gold-display {
+                padding: 6px 12px;
+                font-size: 0.9rem;
+            }
+            
+            .major-actions .btn {
+                flex: 1;
+                text-align: center;
+                justify-content: center;
+            }
+            
+            .form-buttons {
+                flex-direction: column;
+            }
+        }
+    
+        /* 导航栏阴影 */
+        .nav-shadow {
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body>
+    <!-- 通知区域 -->
+    <div id="notification-area"></div>
+    
+    <!-- 页面头部 -->
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                <i class="fa fa-crown"></i>
+                <span>积分制待办 - 学习版</span>
+            </div>
+            <div class="user-info">
+                <div class="gold-display">
+                    <i class="fa fa-coins"></i>
+                    <span id="gold-amount">100</span> 金币
+                </div>
+                <div class="user">
+                    <i class="fa fa-user-circle"></i> <span id="username">学习者</span>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="main-content">
+            <!-- 左侧面板：待办事项 -->
+            <div class="left-panel">
+                <div class="panel-title">
+                    <h2><i class="fa fa-tasks"></i> 待办管理</h2>
+                    <button class="btn" id="add-major-btn">
+                        <i class="fa fa-plus"></i>
+                        <span class="desktop-btn-text">添加大目标</span>
+                        <span class="mobile-btn-text">添加</span>
+                    </button>
+                </div>
+                
+                <div class="todos-container" id="todos-container">
+                    <!-- 示例待办事项 -->
+                    <div class="major-todo">
+                        <div class="major-todo-header">
+                            <div class="major-title">
+                                <i class="fa fa-graduation-cap"></i>
+                                <span>期末考试考全班第一</span>
+                            </div>
+                            <div class="major-actions mobile-flex">
+                                <button class="btn" disabled style="opacity: 0.5;">
+                                    <i class="fa fa-check"></i>
+                                    <span class="desktop-btn-text">完成大目标</span>
+                                    <span class="mobile-btn-text">完成</span>
+                                </button>
+                                <button class="btn add-minor-btn" data-id="1">
+                                    <i class="fa fa-plus"></i>
+                                    <span class="desktop-btn-text">添加小目标</span>
+                                    <span class="mobile-btn-text">添加任务</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="minor-todos">
+                            <div class="minor-todo" data-id="101">
+                                <input type="checkbox" data-id="101">
+                                <div class="minor-title">做1000篇语文阅读理解</div>
+                                <div class="minor-actions">
+                                    <button class="action-btn delete-minor-btn" data-id="101">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="minor-todo" data-id="102">
+                                <input type="checkbox" data-id="102">
+                                <div class="minor-title">学完初中数学</div>
+                                <div class="minor-actions">
+                                    <button class="action-btn delete-minor-btn" data-id="102">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 添加目标表单 -->
+                <div class="add-form" id="add-form">
+                    <div class="form-group">
+                        <label for="goal-type">添加目标类型</label>
+                        <select class="form-control" id="goal-type">
+                            <option value="major">大目标</option>
+                            <option value="minor">小目标</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="goal-title">目标标题</label>
+                        <input type="text" class="form-control" id="goal-title" placeholder="输入目标内容...">
+                    </div>
+                    
+                    <div class="form-group" id="parent-goal-group" style="display: none;">
+                        <label for="parent-goal">所属大目标</label>
+                        <select class="form-control" id="parent-goal">
+                            <!-- 由JavaScript动态填充 -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button class="btn" id="add-goal-btn" style="flex: 1;">
+                            <i class="fa fa-plus"></i> 添加目标
+                        </button>
+                        <button class="btn btn-accent" id="cancel-add-btn" style="flex: 1;">
+                            <i class="fa fa-times"></i> 取消
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右侧面板：金币系统 -->
+            <div class="right-panel">
+                <!-- 统计和进度 -->
+                <div class="stats-section">
+                    <div class="panel-title">
+                        <h2><i class="fa fa-chart-line"></i> 学习统计</h2>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <i class="fa fa-bullseye fa-2x"></i>
+                            <div class="stat-value" id="completed-minor">0</div>
+                            <div class="stat-label">已完成小目标</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <i class="fa fa-hourglass-half fa-2x"></i>
+                            <div class="stat-value" id="pending-minor">2</div>
+                            <div class="stat-label">进行中小目标</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <i class="fa fa-fire fa-2x"></i>
+                            <div class="stat-value" id="streak-days">1</div>
+                            <div class="stat-label">连续学习天数</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <i class="fa fa-trophy fa-2x"></i>
+                            <div class="stat-value" id="completed-major">0</div>
+                            <div class="stat-label">已完成大目标</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 奖励兑换区 -->
+                <div class="rewards-section">
+                    <div class="panel-title">
+                        <h2><i class="fa fa-gift"></i> 奖励兑换</h2>
+                    </div>
+                    
+                    <div class="rewards-grid">
+                        <div class="reward-card">
+                            <div class="reward-header">
+                                <div class="reward-title">放松时刻</div>
+                                <div class="reward-cost">500 金币</div>
+                            </div>
+                            <div class="reward-desc">
+                                兑换后可以刷15分钟视频
+                            </div>
+                            <button class="btn btn-warning reward-btn" data-cost="500" data-reward="放松时刻">
+                                <i class="fa fa-shopping-cart"></i> 立即兑换
+                            </button>
+                        </div>
+                        
+                        <div class="reward-card">
+                            <div class="reward-header">
+                                <div class="reward-title">美味奶茶</div>
+                                <div class="reward-cost">1000 金币</div>
+                            </div>
+                            <div class="reward-desc">
+                                奖励自己一杯喜欢的奶茶
+                            </div>
+                            <button class="btn btn-warning reward-btn" data-cost="1000" data-reward="美味奶茶">
+                                <i class="fa fa-shopping-cart"></i> 立即兑换
+                            </button>
+                        </div>
+                        
+                        <div class="reward-card">
+                            <div class="reward-header">
+                                <div class="reward-title">心仪礼物</div>
+                                <div class="reward-cost">3000 金币</div>
+                            </div>
+                            <div class="reward-desc">
+                                兑换最想要的一件物品
+                            </div>
+                            <button class="btn btn-warning reward-btn" data-cost="3000" data-reward="心仪礼物">
+                                <i class="fa fa-shopping-cart"></i> 立即兑换
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 兑换记录区 -->
+                <div class="history-section">
+                    <div class="panel-title">
+                        <h2><i class="fa fa-history"></i> 兑换记录</h2>
+                    </div>
+                    
+                    <div class="history-content" id="history-content">
+                        <div class="empty-state">
+                            <i class="fa fa-history"></i>
+                            <p>暂无兑换记录</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 数据结构
+        let userData = {
+            gold: 100,
+            completedMinor: 0,
+            completedMajor: 0,
+            streak: 1,
+            lastLogin: new Date().toISOString()
+        };
+        
+        let goals = [
+            {
+                id: 1,
+                title: "期末考试考全班第一",
+                completed: false,
+                minorTodos: [
+                    { id: 101, title: "做1000篇语文阅读理解", completed: false },
+                    { id: 102, title: "学完初中数学", completed: false }
+                ]
+            }
+        ];
+        
+        // 兑换记录
+        let redemptionHistory = [];
+        
+        // DOM 元素
+        const todosContainer = document.getElementById('todos-container');
+        const goldAmountElement = document.getElementById('gold-amount');
+        const goalTypeSelect = document.getElementById('goal-type');
+        const parentGoalGroup = document.getElementById('parent-goal-group');
+        const parentGoalSelect = document.getElementById('parent-goal');
+        const goalTitleInput = document.getElementById('goal-title');
+        const addGoalBtn = document.getElementById('add-goal-btn');
+        const cancelAddBtn = document.getElementById('cancel-add-btn');
+        const addMajorBtn = document.getElementById('add-major-btn');
+        const rewardButtons = document.querySelectorAll('.reward-btn');
+        const notificationArea = document.getElementById('notification-area');
+        const historyContent = document.getElementById('history-content');
+        
+        // 统计元素
+        const completedMinorElement = document.getElementById('completed-minor');
+        const pendingMinorElement = document.getElementById('pending-minor');
+        const streakDaysElement = document.getElementById('streak-days');
+        const completedMajorElement = document.getElementById('completed-major');
+        
+        // 初始化 - 从localStorage加载数据
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            renderGoals();
+            updateStats();
+            updateGoldDisplay();
+            renderRedemptionHistory();
+            setupEventListeners();
+            
+            // 检查连续登录
+            checkStreak();
+            
+            // 保存数据
+            saveData();
+        });
+        
+        // 保存数据到localStorage
+        function saveData() {
+            const data = {
+                userData: userData,
+                goals: goals,
+                redemptionHistory: redemptionHistory
+            };
+            localStorage.setItem('studyGameData', JSON.stringify(data));
+        }
+        
+        // 从localStorage加载数据
+        function loadData() {
+            const savedData = localStorage.getItem('studyGameData');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                userData = data.userData || userData;
+                goals = data.goals || goals;
+                redemptionHistory = data.redemptionHistory || redemptionHistory;
+            }
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 目标类型切换
+            goalTypeSelect.addEventListener('change', () => {
+                if (goalTypeSelect.value === 'minor') {
+                    parentGoalGroup.style.display = 'block';
+                    populateParentGoals();
+                } else {
+                    parentGoalGroup.style.display = 'none';
+                }
+            });
+            
+            // 添加目标
+            addGoalBtn.addEventListener('click', () => {
+                addGoal();
+                saveData();
+            });
+            
+            // 取消添加
+            cancelAddBtn.addEventListener('click', () => {
+                goalTitleInput.value = '';
+                parentGoalGroup.style.display = 'none';
+                goalTypeSelect.value = 'major';
+            });
+            
+            // 添加大目标按钮
+            addMajorBtn.addEventListener('click', () => {
+                goalTypeSelect.value = 'major';
+                parentGoalGroup.style.display = 'none';
+                goalTitleInput.value = '';
+                goalTitleInput.focus();
+            });
+            
+            // 奖励兑换
+            rewardButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const cost = parseInt(btn.dataset.cost);
+                    const reward = btn.dataset.reward;
+                    redeemReward(cost, reward);
+                    saveData();
+                });
+            });
+        }
+        
+        // 渲染兑换记录
+        function renderRedemptionHistory() {
+            if (redemptionHistory.length === 0) {
+                historyContent.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa fa-history"></i>
+                        <p>暂无兑换记录</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let historyHTML = '';
+            
+            // 按日期降序排列
+            redemptionHistory.sort((a, b) => new Date(b.date) - new Date(a.date))
+                .forEach(item => {
+                historyHTML += `
+                    <div class="history-item">
+                        <div class="history-reward">${item.reward}</div>
+                        <div class="history-details">
+                            <div>-${item.cost} 金币</div>
+                            <div>${item.date}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            historyContent.innerHTML = historyHTML;
+        }
+        
+        // 渲染目标列表
+        function renderGoals() {
+            todosContainer.innerHTML = '';
+            
+            if (goals.length === 0) {
+                todosContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa fa-tasks"></i>
+                        <h3>暂无学习目标</h3>
+                        <p>点击"添加大目标"按钮开始你的学习之旅</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            goals.forEach(goal => {
+                const goalElement = document.createElement('div');
+                goalElement.className = 'major-todo';
+                goalElement.dataset.id = goal.id;
+                
+                // 检查是否所有子任务已完成
+                const allCompleted = goal.minorTodos.every(todo => todo.completed);
+                
+                let goalHTML = `
+                    <div class="major-todo-header">
+                        <div class="major-title">
+                            <i class="fa fa-graduation-cap"></i>
+                            <span>${goal.title}</span>
+                        </div>
+                        <div class="major-actions mobile-flex">
+                            ${allCompleted ? 
+                                `<button class="btn btn-success complete-major-btn" data-id="${goal.id}">
+                                    <i class="fa fa-check"></i>
+                                    <span class="desktop-btn-text">完成大目标</span>
+                                    <span class="mobile-btn-text">完成</span>
+                                </button>` : 
+                                `<button class="btn" disabled style="opacity: 0.5;">
+                                    <i class="fa fa-check"></i>
+                                    <span class="desktop-btn-text">完成大目标</span>
+                                    <span class="mobile-btn-text">完成</span>
+                                </button>`
+                            }
+                            <button class="btn add-minor-btn" data-id="${goal.id}">
+                                <i class="fa fa-plus"></i>
+                                <span class="desktop-btn-text">添加小目标</span>
+                                <span class="mobile-btn-text">添加任务</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="minor-todos">
+                `;
+                
+                goal.minorTodos.forEach(todo => {
+                    goalHTML += `
+                        <div class="minor-todo ${todo.completed ? 'completed' : ''}" data-id="${todo.id}">
+                            <input type="checkbox" ${todo.completed ? 'checked' : ''} data-id="${todo.id}">
+                            <div class="minor-title">${todo.title}</div>
+                            <div class="minor-actions">
+                                <button class="action-btn delete-minor-btn" data-id="${todo.id}">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                goalHTML += `</div>`;
+                goalElement.innerHTML = goalHTML;
+                todosContainer.appendChild(goalElement);
+                
+                // 添加事件监听器
+                addTodoEventListeners();
+            });
+        }
+        
+        // 添加待办事项事件监听器
+        function addTodoEventListeners() {
+            // 小目标复选框
+            document.querySelectorAll('.minor-todos input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const todoId = parseInt(this.dataset.id);
+                    toggleMinorTodo(todoId, this.checked);
+                    saveData();
+                });
+            });
+            
+            // 添加小目标按钮
+            document.querySelectorAll('.add-minor-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const goalId = parseInt(this.dataset.id);
+                    goalTypeSelect.value = 'minor';
+                    parentGoalGroup.style.display = 'block';
+                    populateParentGoals();
+                    parentGoalSelect.value = goalId;
+                    goalTitleInput.focus();
+                });
+            });
+            
+            // 完成大目标按钮
+            document.querySelectorAll('.complete-major-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const goalId = parseInt(this.dataset.id);
+                    completeMajorGoal(goalId);
+                    saveData();
+                });
+            });
+            
+            // 删除小目标
+            document.querySelectorAll('.delete-minor-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const todoId = parseInt(this.dataset.id);
+                    deleteMinorTodo(todoId);
+                    saveData();
+                });
+            });
+        }
+        
+        // 切换小目标完成状态
+        function toggleMinorTodo(id, completed) {
+            let found = false;
+            
+            goals.forEach(goal => {
+                goal.minorTodos.forEach(todo => {
+                    if (todo.id === id) {
+                        todo.completed = completed;
+                        found = true;
+                        
+                        if (completed) {
+                            // 增加金币
+                            addGold(10);
+                            showNotification(`+10 金币！完成了一个小目标`, 'success');
+                            userData.completedMinor++;
+                            
+                            // 创建金币动画效果
+                            createCoinEffect();
+                        } else {
+                            // 如果取消完成，扣除金币
+                            if (userData.gold >= 10) {
+                                userData.gold -= 10;
+                                userData.completedMinor--;
+                                updateGoldDisplay();
+                            }
+                        }
+                    }
+                });
+            });
+            
+            if (found) {
+                renderGoals();
+                updateStats();
+            }
+        }
+        
+        // 完成大目标（带丰富动画）
+        function completeMajorGoal(id) {
+            const goal = goals.find(g => g.id === id);
+            
+            if (goal && !goal.completed) {
+                // 检查是否所有小目标都已完成
+                const allCompleted = goal.minorTodos.every(todo => todo.completed);
+                
+                if (allCompleted) {
+                    // 创建庆祝动画
+                    createCelebration();
+                    
+                    // 显示庆祝消息
+                    showCelebrationMessage(`恭喜完成大目标！`);
+                    
+                    // 标记为完成中（用于动画）
+                    const goalElement = document.querySelector(`.major-todo[data-id="${id}"]`);
+                    goalElement.classList.add('completing');
+                    
+                    setTimeout(() => {
+                        // 从数组中移除该目标
+                        const goalIndex = goals.findIndex(g => g.id === id);
+                        if (goalIndex !== -1) {
+                            goals.splice(goalIndex, 1);
+                        }
+                        
+                        // 增加金币
+                        addGold(100);
+                        showNotification(`+100 金币！成功完成了一个大目标`, 'success');
+                        userData.completedMajor++;
+                        
+                        // 创建金币动画效果
+                        createCoinEffect();
+                        
+                        renderGoals();
+                        updateStats();
+                    }, 1000);
+                } else {
+                    showNotification(`请先完成所有小目标！`, 'error');
+                }
+            }
+        }
+        
+        // 添加金币
+        function addGold(amount) {
+            userData.gold += amount;
+            updateGoldDisplay();
+        }
+        
+        // 更新金币显示
+        function updateGoldDisplay() {
+            goldAmountElement.textContent = userData.gold;
+        }
+        
+        // 兑换奖励
+        function redeemReward(cost, reward) {
+            if (userData.gold >= cost) {
+                userData.gold -= cost;
+                updateGoldDisplay();
+                
+                // 添加兑换记录
+                const now = new Date();
+                const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+                
+                redemptionHistory.unshift({
+                    id: Date.now(),
+                    reward: reward,
+                    cost: cost,
+                    date: dateStr
+                });
+                
+                // 更新兑换记录显示
+                renderRedemptionHistory();
+                
+                showNotification(`兑换成功！已使用 ${cost} 金币兑换 ${reward}`, 'success');
+            } else {
+                showNotification(`金币不足！还需要 ${cost - userData.gold} 金币`, 'error');
+            }
+        }
+        
+        // 添加目标
+        function addGoal() {
+            const title = goalTitleInput.value.trim();
+            const type = goalTypeSelect.value;
+            
+            if (!title) {
+                showNotification('请输入目标标题', 'error');
+                return;
+            }
+            
+            if (type === 'major') {
+                // 添加大目标
+                const newGoal = {
+                    id: Date.now(),
+                    title: title,
+                    completed: false,
+                    minorTodos: []
+                };
+                
+                goals.push(newGoal);
+                showNotification(`已添加大目标: ${title}`, 'success');
+            } else {
+                // 添加小目标
+                const parentId = parseInt(parentGoalSelect.value);
+                const parentGoal = goals.find(g => g.id === parentId);
+                
+                if (parentGoal) {
+                    parentGoal.minorTodos.push({
+                        id: Date.now(),
+                        title: title,
+                        completed: false
+                    });
+                    
+                    showNotification(`已添加小目标: ${title}`, 'success');
+                }
+            }
+            
+            // 重置表单
+            goalTitleInput.value = '';
+            parentGoalGroup.style.display = 'none';
+            goalTypeSelect.value = 'major';
+            
+            // 重新渲染
+            renderGoals();
+            updateStats();
+        }
+        
+        // 删除小目标
+        function deleteMinorTodo(id) {
+            let found = false;
+            
+            goals.forEach(goal => {
+                const index = goal.minorTodos.findIndex(todo => todo.id === id);
+                if (index !== -1) {
+                    goal.minorTodos.splice(index, 1);
+                    found = true;
+                    showNotification('已删除小目标', 'success');
+                }
+            });
+            
+            if (found) {
+                renderGoals();
+                updateStats();
+            }
+        }
+        
+        // 填充父目标选择
+        function populateParentGoals() {
+            parentGoalSelect.innerHTML = '';
+            
+            goals.forEach(goal => {
+                const option = document.createElement('option');
+                option.value = goal.id;
+                option.textContent = goal.title;
+                parentGoalSelect.appendChild(option);
+            });
+        }
+        
+        // 更新统计数据
+        function updateStats() {
+            let completedMinor = 0;
+            let pendingMinor = 0;
+            let completedMajor = userData.completedMajor;
+            
+            goals.forEach(goal => {
+                goal.minorTodos.forEach(todo => {
+                    if (todo.completed) completedMinor++;
+                    else pendingMinor++;
+                });
+            });
+            
+            completedMinorElement.textContent = completedMinor;
+            pendingMinorElement.textContent = pendingMinor;
+            completedMajorElement.textContent = completedMajor;
+            streakDaysElement.textContent = userData.streak;
+        }
+        
+        // 检查连续登录
+        function checkStreak() {
+            const today = new Date().toDateString();
+            
+            if (!userData.lastLogin) {
+                // 第一次登录
+                userData.streak = 1;
+            } else {
+                const lastLogin = new Date(userData.lastLogin);
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                if (lastLogin.toDateString() === yesterday.toDateString()) {
+                    // 连续登录
+                    userData.streak++;
+                } else if (lastLogin.toDateString() !== today) {
+                    // 登录中断
+                    userData.streak = 1;
+                }
+            }
+            
+            userData.lastLogin = new Date().toISOString();
+            streakDaysElement.textContent = userData.streak;
+            
+            if (userData.streak > 1) {
+                showNotification(`连续学习${userData.streak}天！继续加油！`, 'success');
+            }
+        }
+        
+        // 显示通知
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fa fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            
+            notificationArea.appendChild(notification);
+            
+            // 显示通知
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 10);
+            
+            // 3秒后移除
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, 3000);
+        }
+        
+        // 创建金币动画效果
+        function createCoinEffect() {
+            const coin = document.createElement('div');
+            coin.className = 'coin-effect';
+            coin.innerHTML = '<i class="fa fa-coins"></i>';
+            
+            // 随机位置
+            const x = Math.random() * window.innerWidth;
+            coin.style.left = `${x}px`;
+            coin.style.top = '20px';
+            
+            document.body.appendChild(coin);
+            
+            // 动画结束后移除
+            setTimeout(() => {
+                coin.remove();
+            }, 1000);
+        }
+        
+        // 创建庆祝动画
+        function createCelebration() {
+            // 创建彩带效果
+            for (let i = 0; i < 150; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                
+                // 随机颜色
+                const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                
+                // 随机位置
+                confetti.style.left = `${Math.random() * 100}vw`;
+                confetti.style.top = '0';
+                
+                // 随机大小
+                const size = Math.random() * 10 + 5;
+                confetti.style.width = `${size}px`;
+                confetti.style.height = `${size}px`;
+                
+                // 随机动画
+                const animation = Math.random() > 0.5 ? 'confetti-fall' : 'confetti-side';
+                confetti.style.animation = `${animation} ${Math.random() * 3 + 2}s linear forwards`;
+                
+                document.body.appendChild(confetti);
+                
+                // 动画结束后移除元素
+                setTimeout(() => {
+                    confetti.remove();
+                }, 5000);
+            }
+            
+            // 创建烟花效果
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    createFirework();
+                }, i * 100);
+            }
+        }
+        
+        // 创建单个烟花
+        function createFirework() {
+            const x = Math.random() * window.innerWidth;
+            const y = Math.random() * window.innerHeight;
+            
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'firework';
+                
+                // 随机颜色
+                const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+                particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                
+                particle.style.left = `${x}px`;
+                particle.style.top = `${y}px`;
+                
+                // 随机大小
+                const size = Math.random() * 5 + 2;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // 动画
+                particle.style.animation = `fireworks ${Math.random() * 1 + 0.5}s ease-out forwards`;
+                
+                document.body.appendChild(particle);
+                
+                // 动画结束后移除元素
+                setTimeout(() => {
+                    particle.remove();
+                }, 1500);
+            }
+        }
+        
+        // 显示庆祝消息
+        function showCelebrationMessage(message) {
+            const msgElement = document.createElement('div');
+            msgElement.className = 'celebration-message';
+            msgElement.innerHTML = `<i class="fa fa-trophy"></i> ${message}`;
+            
+            document.body.appendChild(msgElement);
+            
+            // 触发动画
+            setTimeout(() => {
+                msgElement.classList.add('show');
+                
+                // 动画结束后移除
+                setTimeout(() => {
+                    msgElement.remove();
+                }, 1500);
+            }, 10);
+        }
+    </script>
+    
+    <script>
+        // 确保内容不会被底部导航遮挡
+        document.addEventListener('DOMContentLoaded', function() {
+            const mainContent = document.querySelector('.container');
+            const navHeight = document.querySelector('nav').offsetHeight;
+            mainContent.style.paddingBottom = `${navHeight + 20}px`;
+        });
+    </script>
+    
+    <!-- 底部导航栏 -->
+    <nav class="bg-white nav-shadow py-2 px-4 fixed bottom-0 left-0 right-0 z-10">
+        <div class="flex justify-around">
+            <a href="index.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-home text-xl"></i>
+                <span class="text-xs mt-1">首页</span>
+            </a>
+            <a href="pomodoro.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-clock-o text-xl"></i>
+                <span class="text-xs mt-1">番茄钟</span>
+            </a>
+            <a href="quadrant.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-th text-xl"></i>
+                <span class="text-xs mt-1">四象限</span>
+            </a>
+            <a href="todo.html" class="flex flex-col items-center py-1 text-primary">
+                <i class="fa fa-check-square-o text-xl"></i>
+                <span class="text-xs mt-1">待办</span>
+            </a>
+            <a href="vocabulary.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-book text-xl"></i>
+                <span class="text-xs mt-1">单词</span>
+            </a>
+            <a href="habit.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-calendar-check-o text-xl"></i>
+                <span class="text-xs mt-1">习惯</span>
+            </a>
+        </div>
+    </nav>
+</body>
+</html>

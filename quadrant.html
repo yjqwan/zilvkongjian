@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自律空间 - 四象限时间管理法</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#F59E0B',
+                        danger: '#EF4444',
+                        dark: '#1F2937',
+                        light: '#F3F4F6'
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .quadrant-container {
+                position: relative;
+            }
+            .quadrant-divider {
+                position: absolute;
+                background-color: #D1D5DB;
+                z-index: 10;
+            }
+            .quadrant-divider-horizontal {
+                top: 50%;
+                left: 0;
+                right: 0;
+                height: 2px;
+            }
+            .quadrant-divider-vertical {
+                left: 50%;
+                top: 0;
+                bottom: 0;
+                width: 2px;
+            }
+            .quadrant-card {
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+            }
+            .task-list {
+                flex-grow: 1;
+                overflow-y: auto;
+            }
+            .nav-shadow {
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            }
+            /* 添加手机端优化样式 */
+            @media (max-width: 640px) {
+                .quadrant-card h2 {
+                    font-size: 0.9rem;
+                    padding-bottom: 4px;
+                }
+                .task-item {
+                    font-size: 0.85rem;
+                    padding: 8px 10px;
+                }
+                .task-item span {
+                    flex-grow: 1;
+                    word-break: break-word;
+                }
+                .quadrant-card button {
+                    font-size: 0.75rem;
+                    padding: 4px 0;
+                }
+                .grid {
+                    gap: 1px;
+                }
+                .quadrant-card {
+                    padding: 10px;
+                }
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- 主内容区 -->
+    <main class="flex-grow px-4 py-6">
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold text-dark mb-2">四象限时间管理法</h1>
+            <p class="text-gray-500">高效区分任务优先级</p>
+        </div>
+
+        <!-- 四象限标题 -->
+        <div class="flex justify-between items-center mb-2">
+            <div></div>
+            <div class="text-center font-medium text-gray-600">重要性 ↑</div>
+        </div>
+
+        <!-- 四象限区域 - 真正的四格布局 -->
+        <div class="relative w-full aspect-square mb-6">
+            <!-- 分割线 -->
+            <div class="quadrant-divider quadrant-divider-horizontal"></div>
+            <div class="quadrant-divider quadrant-divider-vertical"></div>
+            
+            <!-- 标签 -->
+            <div class="absolute -top-8 left-0 font-medium text-gray-600">紧急性 →</div>
+            <div class="absolute -bottom-6 left-1/4 transform -translate-x-1/2 font-medium text-gray-600">不紧急</div>
+            <div class="absolute -bottom-6 right-1/4 transform translate-x-1/2 font-medium text-gray-600">紧急</div>
+            <div class="absolute top-1/4 -left-16 transform -translate-y-1/2 font-medium text-gray-600 text-right">不重要</div>
+            <div class="absolute top-1/3 -left-16 transform -translate-y-1/2 font-medium text-gray-600 text-right">重要</div>
+            
+            <!-- 四象限卡片 -->
+            <div class="grid grid-cols-2 grid-rows-2 w-full h-full gap-2">
+                <!-- 第二象限：重要不紧急 -->
+                <div class="bg-blue-50 rounded-lg p-4 border border-blue-100 quadrant-card">
+                    <h2 class="font-bold text-blue-600 mb-2 flex items-center">
+                        <i class="fa fa-calendar-check-o mr-2"></i>重要不紧急
+                    </h2>
+                    <div id="quadrant-2" class="task-list space-y-2">
+                        <!-- 任务项将通过JS动态添加 -->
+                    </div>
+                    <button onclick="addTask(2)" class="mt-2 text-sm text-blue-500 hover:text-blue-700 flex items-center">
+                        <i class="fa fa-plus-circle mr-1"></i> 添加任务
+                    </button>
+                </div>
+
+                <!-- 第一象限：重要且紧急 -->
+                <div class="bg-red-50 rounded-lg p-4 border border-red-100 quadrant-card">
+                    <h2 class="font-bold text-red-600 mb-2 flex items-center">
+                        <i class="fa fa-exclamation-circle mr-2"></i>重要且紧急
+                    </h2>
+                    <div id="quadrant-1" class="task-list space-y-2">
+                        <!-- 任务项将通过JS动态添加 -->
+                    </div>
+                    <button onclick="addTask(1)" class="mt-2 text-sm text-red-500 hover:text-red-700 flex items-center">
+                        <i class="fa fa-plus-circle mr-1"></i> 添加任务
+                    </button>
+                </div>
+
+                <!-- 第四象限：不紧急不重要 -->
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-100 quadrant-card">
+                    <h2 class="font-bold text-gray-600 mb-2 flex items-center">
+                        <i class="fa fa-minus-circle mr-2"></i>不紧急不重要
+                    </h2>
+                    <div id="quadrant-4" class="task-list space-y-2">
+                        <!-- 任务项将通过JS动态添加 -->
+                    </div>
+                    <button onclick="addTask(4)" class="mt-2 text-sm text-gray-500 hover:text-gray-700 flex items-center">
+                        <i class="fa fa-plus-circle mr-1"></i> 添加任务
+                    </button>
+                </div>
+
+                <!-- 第三象限：紧急不重要 -->
+                <div class="bg-yellow-50 rounded-lg p-4 border border-yellow-100 quadrant-card">
+                    <h2 class="font-bold text-yellow-600 mb-2 flex items-center">
+                        <i class="fa fa-bell mr-2"></i>紧急不重要
+                    </h2>
+                    <div id="quadrant-3" class="task-list space-y-2">
+                        <!-- 任务项将通过JS动态添加 -->
+                    </div>
+                    <button onclick="addTask(3)" class="mt-2 text-sm text-yellow-500 hover:text-yellow-700 flex items-center">
+                        <i class="fa fa-plus-circle mr-1"></i> 添加任务
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 底部导航栏 -->
+    <!-- 底部导航栏 -->
+    <nav class="bg-white nav-shadow py-2 px-4 fixed bottom-0 left-0 right-0 z-10">
+        <div class="flex justify-around">
+            <a href="index.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-home text-xl"></i>
+                <span class="text-xs mt-1">首页</span>
+            </a>
+            <a href="pomodoro.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-clock-o text-xl"></i>
+                <span class="text-xs mt-1">番茄钟</span>
+            </a>
+            <a href="quadrant.html" class="flex flex-col items-center py-1 text-primary">
+                <i class="fa fa-th text-xl"></i>
+                <span class="text-xs mt-1">四象限</span>
+            </a>
+            <a href="todo.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-check-square-o text-xl"></i>
+                <span class="text-xs mt-1">待办</span>
+            </a>
+            <a href="vocabulary.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-book text-xl"></i>
+                <span class="text-xs mt-1">单词</span>
+            </a>
+            <a href="habit.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-calendar-check-o text-xl"></i>
+                <span class="text-xs mt-1">习惯</span>
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        // 确保内容不会被底部导航遮挡
+        document.addEventListener('DOMContentLoaded', function() {
+            const mainContent = document.querySelector('main');
+            const navHeight = document.querySelector('nav').offsetHeight;
+            mainContent.style.paddingBottom = `${navHeight + 20}px`;
+        });
+    </script>
+</body>
+</html>
+
+    <script>
+        // 确保内容不会被底部导航遮挡
+        document.addEventListener('DOMContentLoaded', function() {
+            const mainContent = document.querySelector('main');
+            const navHeight = document.querySelector('nav').offsetHeight;
+            mainContent.style.paddingBottom = `${navHeight + 20}px`;
+        });
+    </script>
+</body>
+</html>
