@@ -59,6 +59,21 @@
             .nav-shadow {
                 box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
             }
+            .task-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 10px 12px;
+                background-color: white;
+                border-radius: 8px;
+                border: 1px solid #E5E7EB;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+                transition: all 0.2s;
+            }
+            .task-item:hover {
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                transform: translateY(-1px);
+            }
             /* 添加手机端优化样式 */
             @media (max-width: 640px) {
                 .quadrant-card h2 {
@@ -172,7 +187,6 @@
     </main>
 
     <!-- 底部导航栏 -->
-    <!-- 底部导航栏 -->
     <nav class="bg-white nav-shadow py-2 px-4 fixed bottom-0 left-0 right-0 z-10">
         <div class="flex justify-around">
             <a href="index.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
@@ -208,18 +222,97 @@
             const mainContent = document.querySelector('main');
             const navHeight = document.querySelector('nav').offsetHeight;
             mainContent.style.paddingBottom = `${navHeight + 20}px`;
+            
+            // 加载保存的任务
+            loadTasks();
         });
-    </script>
-</body>
-</html>
-
-    <script>
-        // 确保内容不会被底部导航遮挡
-        document.addEventListener('DOMContentLoaded', function() {
-            const mainContent = document.querySelector('main');
-            const navHeight = document.querySelector('nav').offsetHeight;
-            mainContent.style.paddingBottom = `${navHeight + 20}px`;
-        });
+        
+        // 从localStorage加载任务
+        function loadTasks() {
+            const tasksData = localStorage.getItem('quadrantTasks');
+            if (tasksData) {
+                const tasks = JSON.parse(tasksData);
+                
+                for (const [quadrant, quadrantTasks] of Object.entries(tasks)) {
+                    const quadrantElement = document.getElementById(`quadrant-${quadrant}`);
+                    if (quadrantElement) {
+                        quadrantTasks.forEach(task => {
+                            addTaskToQuadrant(parseInt(quadrant), task.text, false);
+                        });
+                    }
+                }
+            }
+        }
+        
+        // 保存任务到localStorage
+        function saveTasks() {
+            const tasks = {};
+            
+            // 收集每个象限的任务
+            for (let i = 1; i <= 4; i++) {
+                const quadrantElement = document.getElementById(`quadrant-${i}`);
+                const taskElements = quadrantElement.querySelectorAll('.task-item');
+                
+                if (taskElements.length > 0) {
+                    tasks[i] = Array.from(taskElements).map(el => ({
+                        text: el.querySelector('span').textContent
+                    }));
+                }
+            }
+            
+            localStorage.setItem('quadrantTasks', JSON.stringify(tasks));
+        }
+        
+        // 添加任务到指定象限
+        function addTask(quadrantNumber) {
+            const taskText = prompt('请输入任务内容:');
+            
+            if (taskText && taskText.trim()) {
+                addTaskToQuadrant(quadrantNumber, taskText.trim(), true);
+                saveTasks();
+            }
+        }
+        
+        // 实际添加任务到象限的函数
+        function addTaskToQuadrant(quadrantNumber, taskText, showNotification = false) {
+            const quadrantElement = document.getElementById(`quadrant-${quadrantNumber}`);
+            if (!quadrantElement) return;
+            
+            const taskItem = document.createElement('div');
+            taskItem.className = 'task-item';
+            taskItem.innerHTML = `
+                <span>${taskText}</span>
+                <button onclick="deleteTask(this, ${quadrantNumber})" class="text-gray-400 hover:text-danger ml-2">
+                    <i class="fa fa-trash-o"></i>
+                </button>
+            `;
+            
+            quadrantElement.appendChild(taskItem);
+            
+            if (showNotification) {
+                // 简单的通知效果
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+                notification.textContent = '任务添加成功！';
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+                    setTimeout(() => notification.remove(), 500);
+                }, 2000);
+            }
+        }
+        
+        // 删除任务
+        function deleteTask(button, quadrantNumber) {
+            const taskItem = button.closest('.task-item');
+            taskItem.classList.add('opacity-0', 'scale-95', 'transition-all', 'duration-200');
+            
+            setTimeout(() => {
+                taskItem.remove();
+                saveTasks();
+            }, 200);
+        }
     </script>
 </body>
 </html>
