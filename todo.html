@@ -34,6 +34,7 @@
         }
     </style>
     <style>
+        /* 保持原有CSS样式不变 */
         * {
             margin: 0;
             padding: 0;
@@ -243,8 +244,8 @@
         .major-todo {
             background: var(--light-gray);
             border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
+            padding: 12px 15px;
+            margin-bottom: 10px;
             box-shadow: var(--shadow);
             border-left: 4px solid var(--primary);
             transition: all 0.3s;
@@ -260,30 +261,29 @@
         .major-todo-header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-            gap: 8px;
+            align-items: center;
         }
         
         .major-title {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: 600;
             display: flex;
             align-items: center;
             gap: 8px;
+            flex: 1;
         }
         
         .major-actions {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
-            justify-content: flex-end;
-            width: 100%;
+            margin-top: 10px;
+            transition: all 0.3s ease;
         }
         
         .minor-todos {
             margin-top: 12px;
+            transition: all 0.3s ease;
         }
         
         .minor-todo {
@@ -344,6 +344,31 @@
         .action-btn:hover {
             color: var(--primary);
             background: rgba(52, 152, 219, 0.1);
+        }
+        
+        /* 折叠/展开相关样式 */
+        .collapsible-content {
+            transition: all 0.3s ease;
+            overflow: hidden;
+            max-height: 1000px;
+        }
+        
+        .collapsed .collapsible-content {
+            max-height: 0;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        
+        .toggle-minor-btn {
+            margin-left: 8px;
+            color: var(--gray);
+            flex-shrink: 0;
+        }
+        
+        .toggle-minor-btn:hover {
+            color: var(--primary);
+            background: transparent;
         }
         
         /* 右侧面板 */
@@ -789,7 +814,12 @@
                             <div class="major-title">
                                 <i class="fa fa-graduation-cap"></i>
                                 <span>期末考试考全班第一</span>
+                                <button class="action-btn toggle-minor-btn" data-id="1">
+                                    <i class="fa fa-chevron-up"></i>
+                                </button>
                             </div>
+                        </div>
+                        <div class="collapsible-content">
                             <div class="major-actions mobile-flex">
                                 <button class="btn" disabled style="opacity: 0.5;">
                                     <i class="fa fa-check"></i>
@@ -802,24 +832,24 @@
                                     <span class="mobile-btn-text">添加任务</span>
                                 </button>
                             </div>
-                        </div>
-                        <div class="minor-todos">
-                            <div class="minor-todo" data-id="101">
-                                <input type="checkbox" data-id="101">
-                                <div class="minor-title">做1000篇语文阅读理解</div>
-                                <div class="minor-actions">
-                                    <button class="action-btn delete-minor-btn" data-id="101">
-                                        <i class="fa fa-trash"></i>
-                                    </button>
+                            <div class="minor-todos" id="minor-todos-1">
+                                <div class="minor-todo" data-id="101">
+                                    <input type="checkbox" data-id="101">
+                                    <div class="minor-title">做1000篇语文阅读理解</div>
+                                    <div class="minor-actions">
+                                        <button class="action-btn delete-minor-btn" data-id="101">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="minor-todo" data-id="102">
-                                <input type="checkbox" data-id="102">
-                                <div class="minor-title">学完初中数学</div>
-                                <div class="minor-actions">
-                                    <button class="action-btn delete-minor-btn" data-id="102">
-                                        <i class="fa fa-trash"></i>
-                                    </button>
+                                <div class="minor-todo" data-id="102">
+                                    <input type="checkbox" data-id="102">
+                                    <div class="minor-title">学完初中数学</div>
+                                    <div class="minor-actions">
+                                        <button class="action-btn delete-minor-btn" data-id="102">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -974,6 +1004,7 @@
                 id: 1,
                 title: "期末考试考全班第一",
                 completed: false,
+                collapsed: false,
                 minorTodos: [
                     { id: 101, title: "做1000篇语文阅读理解", completed: false },
                     { id: 102, title: "学完初中数学", completed: false }
@@ -1011,7 +1042,7 @@
             updateStats();
             updateGoldDisplay();
             renderRedemptionHistory();
-            setupEventListeners();
+            setupEventDelegation(); // 使用事件委托代替直接绑定
             
             // 检查连续登录
             checkStreak();
@@ -1019,6 +1050,11 @@
             // 保存数据
             saveData();
         });
+        
+        // 生成唯一ID的函数 - 修复潜在的ID冲突问题
+        function generateUniqueId() {
+            return Date.now() + Math.floor(Math.random() * 1000);
+        }
         
         // 保存数据到localStorage
         function saveData() {
@@ -1041,8 +1077,58 @@
             }
         }
         
-        // 设置事件监听器
-        function setupEventListeners() {
+        // 使用事件委托设置事件监听器 - 修复多元素时的事件绑定问题
+        function setupEventDelegation() {
+            // 为整个待办容器添加一个事件监听器，而不是为每个元素单独添加
+            todosContainer.addEventListener('click', function(e) {
+                // 折叠/展开按钮
+                if (e.target.closest('.toggle-minor-btn')) {
+                    const btn = e.target.closest('.toggle-minor-btn');
+                    const goalId = parseInt(btn.dataset.id);
+                    toggleGoalCollapse(goalId);
+                    return;
+                }
+                
+                // 添加小目标按钮
+                if (e.target.closest('.add-minor-btn')) {
+                    const btn = e.target.closest('.add-minor-btn');
+                    const goalId = parseInt(btn.dataset.id);
+                    goalTypeSelect.value = 'minor';
+                    parentGoalGroup.style.display = 'block';
+                    populateParentGoals();
+                    parentGoalSelect.value = goalId;
+                    goalTitleInput.focus();
+                    return;
+                }
+                
+                // 完成大目标按钮
+                if (e.target.closest('.complete-major-btn')) {
+                    const btn = e.target.closest('.complete-major-btn');
+                    const goalId = parseInt(btn.dataset.id);
+                    completeMajorGoal(goalId);
+                    saveData();
+                    return;
+                }
+                
+                // 删除小目标按钮
+                if (e.target.closest('.delete-minor-btn')) {
+                    const btn = e.target.closest('.delete-minor-btn');
+                    const todoId = parseInt(btn.dataset.id);
+                    deleteMinorTodo(todoId);
+                    saveData();
+                    return;
+                }
+            });
+            
+            // 小目标复选框事件委托
+            todosContainer.addEventListener('change', function(e) {
+                if (e.target.matches('.minor-todos input[type="checkbox"]')) {
+                    const todoId = parseInt(e.target.dataset.id);
+                    toggleMinorTodo(todoId, e.target.checked);
+                    saveData();
+                }
+            });
+            
             // 目标类型切换
             goalTypeSelect.addEventListener('change', () => {
                 if (goalTypeSelect.value === 'minor') {
@@ -1083,6 +1169,34 @@
                     saveData();
                 });
             });
+        }
+        
+        // 切换目标折叠状态
+        function toggleGoalCollapse(goalId) {
+            const goal = goals.find(g => g.id === goalId);
+            if (!goal) return;
+            
+            // 切换折叠状态
+            goal.collapsed = !goal.collapsed;
+            
+            // 更新UI
+            const goalElement = document.querySelector(`.major-todo[data-id="${goalId}"]`);
+            if (goalElement) {
+                if (goal.collapsed) {
+                    goalElement.classList.add('collapsed');
+                } else {
+                    goalElement.classList.remove('collapsed');
+                }
+                
+                // 更新按钮图标
+                const iconElement = goalElement.querySelector('.toggle-minor-btn i');
+                if (iconElement) {
+                    iconElement.className = `fa ${goal.collapsed ? 'fa-chevron-down' : 'fa-chevron-up'}`;
+                }
+            }
+            
+            // 保存状态
+            saveData();
         }
         
         // 渲染兑换记录
@@ -1133,18 +1247,26 @@
             
             goals.forEach(goal => {
                 const goalElement = document.createElement('div');
-                goalElement.className = 'major-todo';
+                goalElement.className = `major-todo ${goal.collapsed ? 'collapsed' : ''}`;
                 goalElement.dataset.id = goal.id;
                 
                 // 检查是否所有子任务已完成
                 const allCompleted = goal.minorTodos.every(todo => todo.completed);
+                
+                // 折叠/展开按钮图标
+                const toggleIcon = goal.collapsed ? 'fa-chevron-down' : 'fa-chevron-up';
                 
                 let goalHTML = `
                     <div class="major-todo-header">
                         <div class="major-title">
                             <i class="fa fa-graduation-cap"></i>
                             <span>${goal.title}</span>
+                            <button class="action-btn toggle-minor-btn" data-id="${goal.id}">
+                                <i class="fa ${toggleIcon}"></i>
+                            </button>
                         </div>
+                    </div>
+                    <div class="collapsible-content">
                         <div class="major-actions mobile-flex">
                             ${allCompleted ? 
                                 `<button class="btn btn-success complete-major-btn" data-id="${goal.id}">
@@ -1164,8 +1286,7 @@
                                 <span class="mobile-btn-text">添加任务</span>
                             </button>
                         </div>
-                    </div>
-                    <div class="minor-todos">
+                        <div class="minor-todos" id="minor-todos-${goal.id}">
                 `;
                 
                 goal.minorTodos.forEach(todo => {
@@ -1182,54 +1303,9 @@
                     `;
                 });
                 
-                goalHTML += `</div>`;
+                goalHTML += `</div></div>`;
                 goalElement.innerHTML = goalHTML;
                 todosContainer.appendChild(goalElement);
-                
-                // 添加事件监听器
-                addTodoEventListeners();
-            });
-        }
-        
-        // 添加待办事项事件监听器
-        function addTodoEventListeners() {
-            // 小目标复选框
-            document.querySelectorAll('.minor-todos input[type="checkbox"]').forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    const todoId = parseInt(this.dataset.id);
-                    toggleMinorTodo(todoId, this.checked);
-                    saveData();
-                });
-            });
-            
-            // 添加小目标按钮
-            document.querySelectorAll('.add-minor-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const goalId = parseInt(this.dataset.id);
-                    goalTypeSelect.value = 'minor';
-                    parentGoalGroup.style.display = 'block';
-                    populateParentGoals();
-                    parentGoalSelect.value = goalId;
-                    goalTitleInput.focus();
-                });
-            });
-            
-            // 完成大目标按钮
-            document.querySelectorAll('.complete-major-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const goalId = parseInt(this.dataset.id);
-                    completeMajorGoal(goalId);
-                    saveData();
-                });
-            });
-            
-            // 删除小目标
-            document.querySelectorAll('.delete-minor-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const todoId = parseInt(this.dataset.id);
-                    deleteMinorTodo(todoId);
-                    saveData();
-                });
             });
         }
         
@@ -1269,7 +1345,7 @@
             }
         }
         
-        // 完成大目标（带丰富动画）
+        // 完成大目标
         function completeMajorGoal(id) {
             const goal = goals.find(g => g.id === id);
             
@@ -1334,7 +1410,7 @@
                 const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
                 
                 redemptionHistory.unshift({
-                    id: Date.now(),
+                    id: generateUniqueId(),
                     reward: reward,
                     cost: cost,
                     date: dateStr
@@ -1360,11 +1436,12 @@
             }
             
             if (type === 'major') {
-                // 添加大目标
+                // 添加大目标，使用更可靠的ID生成方式
                 const newGoal = {
-                    id: Date.now(),
+                    id: generateUniqueId(),
                     title: title,
                     completed: false,
+                    collapsed: false,
                     minorTodos: []
                 };
                 
@@ -1377,7 +1454,7 @@
                 
                 if (parentGoal) {
                     parentGoal.minorTodos.push({
-                        id: Date.now(),
+                        id: generateUniqueId(),
                         title: title,
                         completed: false
                     });
