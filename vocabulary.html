@@ -1188,6 +1188,38 @@ mother n.母亲"></textarea>
                     <button class="btn btn-accent" id="exportBtn"><i class="fa fa-download"></i> 导出单词</button>
                 </div>
             </div>
+            
+            <!-- 新增批量导入单词本区域 -->
+            <div class="import-section" style="margin-top: 30px;">
+                <h3>批量导入单词本</h3>
+                <p>每个单词本以 "=== 单词本名 ===" 开始，后面跟着该单词本的单词（格式同上），不同单词本之间用空行分隔</p>
+                <textarea id="batchImportTextarea" placeholder="例如：
+=== 水果单词 ===
+apple n.苹果
+banana n.香蕉
+orange n.橙子
+
+=== 家庭成员 ===
+father n.父亲
+mother n.母亲
+sister n.姐妹
+brother n.兄弟"></textarea>
+                
+                <div class="example">
+                    <strong>示例格式：</strong><br>
+                    === 单词本1名称 ===<br>
+                    word1 pos.意思1<br>
+                    word2 pos.意思2<br>
+                    <br>
+                    === 单词本2名称 ===<br>
+                    word3 pos.意思3<br>
+                    word4 pos.意思4
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn" id="batchImportBtn"><i class="fa fa-file-text-o"></i> 批量导入单词本</button>
+                </div>
+            </div>
         </section>
     </div>
 
@@ -1359,13 +1391,17 @@ banana n.香蕉"></textarea>
                 <i class="fa fa-check-square-o text-xl"></i>
                 <span class="text-xs mt-1">待办</span>
             </a>
-            <a href="more.html" class="flex flex-col items-center py-1 text-primary">
+            <a href="more.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
                 <i class="fa fa-ellipsis-h text-xl"></i>
                 <span class="text-xs mt-1">更多</span>
             </a>
+            <a href="guide.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-question-circle text-xl"></i>
+                <span class="text-xs mt-1">使用指引</span>
+            </a>
         </div>
     </nav>
-
+    
     <script>
         // 确保内容不会被底部导航遮挡
         document.addEventListener('DOMContentLoaded', function() {
@@ -1700,9 +1736,107 @@ banana n.香蕉"></textarea>
                 navigator.clipboard.writeText(words).then(() => {
                     showToast('单词已复制到剪贴板！');
                 }).catch(err => {
-                    alert('复制失败，请手动复制');
-                    console.error('复制失败:', err);
+                    showToast('复制失败，请手动选择并复制！');
                 });
+            });
+            
+            // 新增批量导入单词本功能
+            document.getElementById('batchImportBtn').addEventListener('click', function() {
+                const text = document.getElementById('batchImportTextarea').value;
+                if (!text.trim()) {
+                    alert('请输入要导入的单词本内容');
+                    return;
+                }
+                
+                try {
+                    // 按空行分割单词本
+                    const bookBlocks = text.split(/\n\s*\n/);
+                    let importedCount = 0;
+                    
+                    for (const block of bookBlocks) {
+                        if (!block.trim()) continue;
+                        
+                        // 分割单词本名称和单词内容
+                        const lines = block.split('\n').filter(line => line.trim());
+                        if (lines.length === 0) continue;
+                        
+                        // 检查第一行是否为单词本名（以===开头和结尾）
+                        const firstLine = lines[0].trim();
+                        if (!firstLine.startsWith('===') || !firstLine.endsWith('===')) {
+                            alert(`格式错误：单词本应以"=== 单词本名 ==="开始，错误行：${firstLine}`);
+                            return;
+                        }
+                        
+                        // 提取单词本名称
+                        const bookName = firstLine.substring(3, firstLine.length - 3).trim();
+                        if (!bookName) {
+                            alert('单词本名称不能为空');
+                            return;
+                        }
+                        
+                        // 创建唯一的单词本ID
+                        let bookId = 'custom_batch_imported_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+                        
+                        // 解析单词
+                        const words = [];
+                        const wordLines = lines.slice(1); // 跳过第一行（单词本名称）
+                        
+                        for (let line of wordLines) {
+                            line = line.trim();
+                            if (!line) continue;
+                            
+                            // 尝试解析每一行：单词 词性.中文意思
+                            const parts = line.split(/\s+/);
+                            if (parts.length < 2) {
+                                alert(`格式错误: "${line}"，请使用正确格式：单词 词性.中文意思`);
+                                return;
+                            }
+                            
+                            const word = parts[0];
+                            const rest = parts.slice(1).join(' ');
+                            const posMatch = rest.match(/^([a-zA-Z]+\.)/);
+                            if (!posMatch) {
+                                alert(`格式错误: "${line}"，词性部分必须以英文句点结尾，如"n.苹果"`);
+                                return;
+                            }
+                            
+                            const pos = posMatch[0];
+                            const meaning = rest.slice(pos.length).trim();
+                            
+                            words.push({ word, pos, meaning });
+                        }
+                        
+                        if (words.length === 0) {
+                            continue; // 跳过没有单词的单词本
+                        }
+                        
+                        // 添加到单词本
+                        wordbooks[bookId] = {
+                            name: bookName,
+                            description: `包含 ${words.length} 个单词`,
+                            words: words
+                        };
+                        
+                        importedCount++;
+                    }
+                    
+                    if (importedCount === 0) {
+                        alert('没有成功导入任何单词本，请检查格式');
+                        return;
+                    }
+                    
+                    // 保存到本地存储
+                    saveDataToLocalStorage();
+                    
+                    // 刷新单词本和单词库
+                    initWordbooks();
+                    initWordLibrary();
+                    
+                    showToast(`成功导入 ${importedCount} 个单词本！`);
+                    document.getElementById('batchImportTextarea').value = '';
+                } catch (error) {
+                    alert('导入过程中出现错误：' + error.message);
+                }
             });
             
             // 消息通知
