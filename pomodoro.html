@@ -250,9 +250,13 @@
                 <i class="fa fa-check-square-o text-xl"></i>
                 <span class="text-xs mt-1">待办</span>
             </a>
-            <a href="more.html" class="flex flex-col items-center py-1 text-primary">
+            <a href="more.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
                 <i class="fa fa-ellipsis-h text-xl"></i>
                 <span class="text-xs mt-1">更多</span>
+            </a>
+            <a href="guide.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-question-circle text-xl"></i>
+                <span class="text-xs mt-1">使用指引</span>
             </a>
         </div>
     </nav>
@@ -262,7 +266,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const mainContent = document.querySelector('main');
             const navHeight = document.querySelector('nav').offsetHeight;
-            mainContent.style.paddingBottom = `${navHeight + 20}px`;
+            mainContent.style.paddingBottom = navHeight + 20 + 'px';
         });
     </script>
 </body>
