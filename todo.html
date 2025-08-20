@@ -577,6 +577,97 @@
             border-left: 4px solid var(--warning);
         }
         
+        /* 模态窗口 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+        }
+        
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+            transition: color 0.3s;
+        }
+        
+        .modal-close:hover {
+            color: var(--accent);
+        }
+        
+        .import-format {
+            background: var(--light-gray);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+        
+        .import-format h4 {
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .import-format pre {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        
         /* 移动端适配 */
         @media (min-width: 768px) {
             .container {
@@ -775,6 +866,46 @@
     <!-- 通知区域 -->
     <div id="notification-area"></div>
     
+    <!-- 批量导入模态窗口 -->
+    <div class="modal-overlay" id="import-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fa fa-upload"></i> 批量导入待办事项</h3>
+                <button class="modal-close" id="close-import-modal">&times;</button>
+            </div>
+            
+            <div class="import-format">
+                <h4>格式说明：</h4>
+                <p>每行输入一个待办事项，使用缩进表示层级关系：</p>
+                <ul>
+                    <li>大目标：直接输入文本</li>
+                    <li>小目标：在文本前添加2个空格或1个Tab缩进</li>
+                </ul>
+                <p>示例：</p>
+                <pre>期末考试考全班第一
+  做1000篇语文阅读理解
+  学完初中数学
+学习英语
+  背诵500个单词
+  完成30篇英语阅读</pre>
+            </div>
+            
+            <div class="form-group">
+                <label for="batch-input">待办事项列表</label>
+                <textarea class="form-control" id="batch-input" rows="10" placeholder="请输入待办事项，每行一个..."></textarea>
+            </div>
+            
+            <div class="form-buttons">
+                <button class="btn btn-success" id="confirm-import">
+                    <i class="fa fa-check"></i> 导入
+                </button>
+                <button class="btn btn-accent" id="cancel-import">
+                    <i class="fa fa-times"></i> 取消
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <!-- 页面头部 -->
     <header>
         <div class="header-content">
@@ -800,11 +931,18 @@
             <div class="left-panel">
                 <div class="panel-title">
                     <h2><i class="fa fa-tasks"></i> 待办管理</h2>
-                    <button class="btn" id="add-major-btn">
-                        <i class="fa fa-plus"></i>
-                        <span class="desktop-btn-text">添加大目标</span>
-                        <span class="mobile-btn-text">添加</span>
-                    </button>
+                    <div>
+                        <button class="btn" id="add-major-btn">
+                            <i class="fa fa-plus"></i>
+                            <span class="desktop-btn-text">添加大目标</span>
+                            <span class="mobile-btn-text">添加</span>
+                        </button>
+                        <button class="btn btn-accent" id="batch-import-btn">
+                            <i class="fa fa-upload"></i>
+                            <span class="desktop-btn-text">批量导入</span>
+                            <span class="mobile-btn-text">导入</span>
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="todos-container" id="todos-container">
@@ -1025,9 +1163,15 @@
         const addGoalBtn = document.getElementById('add-goal-btn');
         const cancelAddBtn = document.getElementById('cancel-add-btn');
         const addMajorBtn = document.getElementById('add-major-btn');
+        const batchImportBtn = document.getElementById('batch-import-btn');
         const rewardButtons = document.querySelectorAll('.reward-btn');
         const notificationArea = document.getElementById('notification-area');
         const historyContent = document.getElementById('history-content');
+        const importModal = document.getElementById('import-modal');
+        const closeImportModal = document.getElementById('close-import-modal');
+        const cancelImport = document.getElementById('cancel-import');
+        const confirmImport = document.getElementById('confirm-import');
+        const batchInput = document.getElementById('batch-input');
         
         // 统计元素
         const completedMinorElement = document.getElementById('completed-minor');
@@ -1049,7 +1193,118 @@
             
             // 保存数据
             saveData();
+            
+            // 设置批量导入模态窗口事件
+            setupImportModalEvents();
         });
+        
+        // 设置批量导入模态窗口事件
+        function setupImportModalEvents() {
+            // 打开批量导入模态窗口
+            batchImportBtn.addEventListener('click', () => {
+                importModal.classList.add('active');
+                batchInput.value = '';
+                batchInput.focus();
+            });
+            
+            // 关闭批量导入模态窗口
+            closeImportModal.addEventListener('click', () => {
+                importModal.classList.remove('active');
+            });
+            
+            // 取消导入
+            cancelImport.addEventListener('click', () => {
+                importModal.classList.remove('active');
+            });
+            
+            // 确认导入
+            confirmImport.addEventListener('click', () => {
+                const text = batchInput.value.trim();
+                if (!text) {
+                    showNotification('请输入待办事项', 'error');
+                    return;
+                }
+                
+                const result = parseBatchInput(text);
+                if (result.majorGoalsCount === 0 && result.minorTodosCount === 0) {
+                    showNotification('没有解析到有效的待办事项', 'error');
+                    return;
+                }
+                
+                // 添加解析后的目标
+                goals = goals.concat(result.goals);
+                
+                // 更新界面
+                renderGoals();
+                updateStats();
+                saveData();
+                
+                // 显示成功消息
+                showNotification(`成功导入${result.majorGoalsCount}个大目标和${result.minorTodosCount}个小目标`, 'success');
+                
+                // 关闭模态窗口
+                importModal.classList.remove('active');
+            });
+            
+            // 点击模态窗口外部关闭
+            importModal.addEventListener('click', (e) => {
+                if (e.target === importModal) {
+                    importModal.classList.remove('active');
+                }
+            });
+        }
+        
+        // 解析批量输入的文本
+        function parseBatchInput(text) {
+            const lines = text.split('\n');
+            const newGoals = [];
+            let currentGoal = null;
+            let majorGoalsCount = 0;
+            let minorTodosCount = 0;
+            
+            for (let line of lines) {
+                // 跳过空行
+                if (!line.trim()) continue;
+                
+                // 检测缩进级别
+                const indentMatch = line.match(/^(\s+)/);
+                const indentLevel = indentMatch ? indentMatch[1].length : 0;
+                
+                // 如果是小目标（有缩进）
+                if (indentLevel > 0 && currentGoal) {
+                    const title = line.trim();
+                    if (title) {
+                        currentGoal.minorTodos.push({
+                            id: generateUniqueId(),
+                            title: title,
+                            completed: false
+                        });
+                        minorTodosCount++;
+                    }
+                } 
+                // 如果是大目标（无缩进）
+                else {
+                    const title = line.trim();
+                    if (title) {
+                        currentGoal = {
+                            id: generateUniqueId(),
+                            title: title,
+                            completed: false,
+                            collapsed: false,
+                            minorTodos: []
+                        };
+                        newGoals.push(currentGoal);
+                        majorGoalsCount++;
+                    }
+                }
+            }
+            
+            return {
+                goals: newGoals,
+                majorGoalsCount: majorGoalsCount,
+                minorTodosCount: minorTodosCount
+            };
+        }
         
         // 生成唯一ID的函数 - 修复潜在的ID冲突问题
         function generateUniqueId() {
