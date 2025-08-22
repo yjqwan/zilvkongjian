@@ -906,6 +906,40 @@
         </div>
     </div>
     
+    <!-- 自定义奖励模态窗口 -->
+    <div class="modal-overlay" id="custom-reward-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fa fa-plus-circle"></i> 添加自定义奖励</h3>
+                <button class="modal-close" id="close-custom-reward-modal">&times;</button>
+            </div>
+            
+            <div class="form-group">
+                <label for="custom-reward-name">奖励名称</label>
+                <input type="text" class="form-control" id="custom-reward-name" placeholder="例如：玩游戏1小时">
+            </div>
+            
+            <div class="form-group">
+                <label for="custom-reward-desc">奖励描述</label>
+                <textarea class="form-control" id="custom-reward-desc" rows="3" placeholder="描述这个奖励的具体内容..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="custom-reward-cost">所需金币</label>
+                <input type="number" class="form-control" id="custom-reward-cost" placeholder="输入所需的金币数量" min="10">
+            </div>
+            
+            <div class="form-buttons">
+                <button class="btn btn-success" id="confirm-add-reward">
+                    <i class="fa fa-check"></i> 添加
+                </button>
+                <button class="btn btn-accent" id="cancel-add-reward">
+                    <i class="fa fa-times"></i> 取消
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <!-- 页面头部 -->
     <header>
         <div class="header-content">
@@ -1066,6 +1100,9 @@
                 <div class="rewards-section">
                     <div class="panel-title">
                         <h2><i class="fa fa-gift"></i> 奖励兑换</h2>
+                        <button class="btn btn-accent" id="add-custom-reward-btn">
+                            <i class="fa fa-plus"></i> 添加奖励
+                        </button>
                     </div>
                     
                     <div class="rewards-grid">
@@ -1150,6 +1187,9 @@
             }
         ];
         
+        // 自定义奖励数组
+        let customRewards = [];
+        
         // 兑换记录
         let redemptionHistory = [];
         
@@ -1172,6 +1212,15 @@
         const cancelImport = document.getElementById('cancel-import');
         const confirmImport = document.getElementById('confirm-import');
         const batchInput = document.getElementById('batch-input');
+        const addCustomRewardBtn = document.getElementById('add-custom-reward-btn');
+        const customRewardModal = document.getElementById('custom-reward-modal');
+        const closeCustomRewardModal = document.getElementById('close-custom-reward-modal');
+        const cancelAddReward = document.getElementById('cancel-add-reward');
+        const confirmAddReward = document.getElementById('confirm-add-reward');
+        const customRewardNameInput = document.getElementById('custom-reward-name');
+        const customRewardDescInput = document.getElementById('custom-reward-desc');
+        const customRewardCostInput = document.getElementById('custom-reward-cost');
+        const rewardsGrid = document.querySelector('.rewards-grid');
         
         // 统计元素
         const completedMinorElement = document.getElementById('completed-minor');
@@ -1183,6 +1232,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadData();
             renderGoals();
+            renderCustomRewards(); // 渲染自定义奖励
             updateStats();
             updateGoldDisplay();
             renderRedemptionHistory();
@@ -1196,6 +1246,9 @@
             
             // 设置批量导入模态窗口事件
             setupImportModalEvents();
+            
+            // 设置自定义奖励模态窗口事件
+            setupCustomRewardModalEvents();
         });
         
         // 设置批量导入模态窗口事件
@@ -1316,7 +1369,8 @@
             const data = {
                 userData: userData,
                 goals: goals,
-                redemptionHistory: redemptionHistory
+                redemptionHistory: redemptionHistory,
+                customRewards: customRewards
             };
             localStorage.setItem('studyGameData', JSON.stringify(data));
         }
@@ -1329,6 +1383,7 @@
                 userData = data.userData || userData;
                 goals = data.goals || goals;
                 redemptionHistory = data.redemptionHistory || redemptionHistory;
+                customRewards = data.customRewards || [];
             }
         }
         
@@ -1941,6 +1996,142 @@
                     msgElement.remove();
                 }, 1500);
             }, 10);
+        }
+        
+        // 设置自定义奖励模态窗口事件
+        function setupCustomRewardModalEvents() {
+            // 打开添加自定义奖励模态窗口
+            addCustomRewardBtn.addEventListener('click', () => {
+                customRewardModal.classList.add('active');
+                customRewardNameInput.value = '';
+                customRewardDescInput.value = '';
+                customRewardCostInput.value = '';
+                customRewardNameInput.focus();
+            });
+            
+            // 关闭添加自定义奖励模态窗口
+            closeCustomRewardModal.addEventListener('click', () => {
+                customRewardModal.classList.remove('active');
+            });
+            
+            // 取消添加
+            cancelAddReward.addEventListener('click', () => {
+                customRewardModal.classList.remove('active');
+            });
+            
+            // 确认添加
+            confirmAddReward.addEventListener('click', () => {
+                const name = customRewardNameInput.value.trim();
+                const desc = customRewardDescInput.value.trim();
+                const cost = parseInt(customRewardCostInput.value.trim());
+                
+                // 验证输入
+                if (!name) {
+                    showNotification('请输入奖励名称', 'error');
+                    return;
+                }
+                
+                if (!desc) {
+                    showNotification('请输入奖励描述', 'error');
+                    return;
+                }
+                
+                if (isNaN(cost) || cost < 10) {
+                    showNotification('请输入有效的金币数量（至少10金币）', 'error');
+                    return;
+                }
+                
+                // 添加自定义奖励
+                customRewards.push({
+                    id: generateUniqueId(),
+                    name: name,
+                    description: desc,
+                    cost: cost
+                });
+                
+                // 更新界面
+                renderCustomRewards();
+                saveData();
+                
+                // 显示成功消息
+                showNotification(`成功添加自定义奖励: ${name}`, 'success');
+                
+                // 关闭模态窗口
+                customRewardModal.classList.remove('active');
+            });
+            
+            // 点击模态窗口外部关闭
+            customRewardModal.addEventListener('click', (e) => {
+                if (e.target === customRewardModal) {
+                    customRewardModal.classList.remove('active');
+                }
+            });
+        }
+        
+        // 渲染自定义奖励
+        function renderCustomRewards() {
+            // 先清空所有自定义奖励（保留系统奖励）
+            const customRewardCards = document.querySelectorAll('.reward-card.custom');
+            customRewardCards.forEach(card => card.remove());
+            
+            // 添加自定义奖励
+            customRewards.forEach(reward => {
+                const rewardCard = document.createElement('div');
+                rewardCard.className = 'reward-card custom';
+                rewardCard.dataset.id = reward.id;
+                
+                rewardCard.innerHTML = `
+                    <div class="reward-header">
+                        <div class="reward-title">${reward.name}</div>
+                        <div class="reward-cost">${reward.cost} 金币</div>
+                    </div>
+                    <div class="reward-desc">
+                        ${reward.description}
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="btn btn-warning reward-btn flex-1" data-cost="${reward.cost}" data-reward="${reward.name}">
+                            <i class="fa fa-shopping-cart"></i> 立即兑换
+                        </button>
+                        <button class="btn btn-accent delete-reward-btn" data-id="${reward.id}">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                // 将自定义奖励添加到奖励网格的末尾
+                rewardsGrid.appendChild(rewardCard);
+            });
+            
+            // 为新添加的奖励按钮绑定事件
+            document.querySelectorAll('.reward-btn:not(.event-bound)').forEach(btn => {
+                btn.classList.add('event-bound');
+                btn.addEventListener('click', () => {
+                    const cost = parseInt(btn.dataset.cost);
+                    const reward = btn.dataset.reward;
+                    redeemReward(cost, reward);
+                    saveData();
+                });
+            });
+            
+            // 为删除按钮绑定事件
+            document.querySelectorAll('.delete-reward-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = parseInt(btn.dataset.id);
+                    deleteCustomReward(id);
+                });
+            });
+        }
+        
+        // 删除自定义奖励
+        function deleteCustomReward(id) {
+            const index = customRewards.findIndex(reward => reward.id === id);
+            if (index !== -1) {
+                const rewardName = customRewards[index].name;
+                customRewards.splice(index, 1);
+                renderCustomRewards();
+                saveData();
+                showNotification(`已删除奖励: ${rewardName}`, 'success');
+            }
         }
     </script>
     
