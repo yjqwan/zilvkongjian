@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自律空间 - 备忘录</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#F59E0B',
+                        dark: '#1F2937',
+                        light: '#F3F4F6'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+            }
+            .nav-shadow {
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            }
+            .note-hover {
+                transition: all 0.2s ease;
+            }
+            .note-hover:hover {
+                transform: translateY(-2px);
+            }
+            .note-editor {
+                min-height: 200px;
+                line-height: 1.6;
+            }
+            /* 移动端优化的滚动条 */
+            .mobile-scrollbar::-webkit-scrollbar {
+                width: 4px;
+            }
+            .mobile-scrollbar::-webkit-scrollbar-thumb {
+                background-color: rgba(0,0,0,0.2);
+                border-radius: 2px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- 主内容区 -->
+    <main class="flex-grow px-4 py-6">
+        <!-- 标题区域 -->
+        <div class="bg-gradient-to-r from-primary to-blue-400 rounded-2xl p-6 text-white mb-6">
+            <h1 class="text-[clamp(1.5rem,5vw,2.5rem)] font-bold mb-2">备忘录</h1>
+            <p class="text-blue-50">记录重要事项，整理思路</p>
+        </div>
+        
+        <!-- 功能按钮 - 移动端优化 -->
+        <div class="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 mb-4">
+            <div class="flex space-x-2">
+                <button id="new-note-btn" class="bg-primary text-white px-4 py-2 rounded-lg flex items-center justify-center">
+                    <i class="fa fa-plus mr-2"></i>新建笔记
+                </button>
+                <button id="view-mode-btn" class="bg-white border border-gray-300 px-4 py-2 rounded-lg flex items-center justify-center">
+                    <i class="fa fa-th-large mr-2"></i>视图
+                </button>
+            </div>
+            <div class="w-full md:w-auto">
+                <div class="relative">
+                    <input type="text" id="search-notes" placeholder="搜索笔记..." class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary w-full">
+                    <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 笔记列表和编辑区 - 移动端优化 -->
+        <div class="flex flex-col gap-6">
+            <!-- 笔记列表 -->
+            <div class="bg-white rounded-xl p-4 card-shadow">
+                <h2 class="font-semibold text-gray-700 mb-3">笔记列表</h2>
+                <div id="notes-list" class="space-y-2 max-h-[250px] md:max-h-[500px] overflow-y-auto mobile-scrollbar">
+                    <!-- 笔记项将通过JavaScript动态生成 -->
+                </div>
+            </div>
+            
+            <!-- 笔记编辑区 -->
+            <div class="bg-white rounded-xl p-4 card-shadow">
+                <div class="flex justify-between items-center mb-3">
+                    <input type="text" id="note-title" placeholder="笔记标题" class="text-xl font-bold border-0 outline-none w-full">
+                    <div class="flex space-x-2">
+                        <button id="save-note-btn" class="bg-secondary text-white px-3 py-1 rounded">
+                            <i class="fa fa-save"></i>
+                        </button>
+                        <button id="delete-note-btn" class="bg-red-500 text-white px-3 py-1 rounded" disabled>
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 笔记工具栏 - 移动端优化 -->
+                <div class="border-b border-gray-200 pb-2 mb-3 overflow-x-auto scrollbar-hide">
+                    <div class="flex space-x-1 md:space-x-2 min-w-max">
+                        <button class="text-gray-700 hover:text-primary p-2" title="粗体" onclick="formatText('bold')">
+                            <i class="fa fa-bold"></i>
+                        </button>
+                        <button class="text-gray-700 hover:text-primary p-2" title="斜体" onclick="formatText('italic')">
+                            <i class="fa fa-italic"></i>
+                        </button>
+                        <button class="text-gray-700 hover:text-primary p-2" title="下划线" onclick="formatText('underline')">
+                            <i class="fa fa-underline"></i>
+                        </button>
+                        <div class="h-6 border-r border-gray-300 mx-1 my-auto"></div>
+                        <button class="text-gray-700 hover:text-primary p-2" title="无序列表" onclick="formatText('insertUnorderedList')">
+                            <i class="fa fa-list-ul"></i>
+                        </button>
+                        <button class="text-gray-700 hover:text-primary p-2" title="有序列表" onclick="formatText('insertOrderedList')">
+                            <i class="fa fa-list-ol"></i>
+                        </button>
+                        <div class="h-6 border-r border-gray-300 mx-1 my-auto"></div>
+                        <button class="text-gray-700 hover:text-primary p-2" title="添加图片" onclick="insertImage()">
+                            <i class="fa fa-picture-o"></i>
+                        </button>
+                        <button class="text-gray-700 hover:text-primary p-2" title="添加链接" onclick="insertLink()">
+                            <i class="fa fa-link"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 笔记内容编辑区 -->
+                <div id="note-content" class="note-editor p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary min-h-[300px]" contenteditable="true">
+                    <p>开始输入您的笔记内容...</p>
+                </div>
+                
+                <!-- 笔记标签 -->
+                <div class="mt-3">
+                    <div class="flex items-center mb-2">
+                        <i class="fa fa-tags text-gray-500 mr-2"></i>
+                        <span class="text-sm text-gray-600">标签</span>
+                    </div>
+                    <div id="tags-container" class="flex flex-wrap gap-2 mb-2 min-h-[40px]">
+                        <!-- 标签将通过JavaScript动态生成 -->
+                    </div>
+                    <div class="flex items-center">
+                        <input type="text" id="tag-input" placeholder="添加标签" class="text-sm pl-3 pr-10 py-1 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary flex-grow">
+                        <button id="add-tag-btn" class="ml-2 text-sm bg-primary text-white px-3 py-1 rounded-full">添加</button>
+                    </div>
+                </div>
+                
+                <!-- 笔记信息 -->
+                <div class="mt-4 text-xs text-gray-500 flex flex-col md:flex-row justify-between gap-1">
+                    <span id="note-date">创建时间: --</span>
+                    <span id="note-updated">更新时间: --</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 标签过滤器 -->
+        <div class="mt-6 bg-white rounded-xl p-4 card-shadow mb-24">
+            <h2 class="font-semibold text-gray-700 mb-3">按标签筛选</h2>
+            <div id="all-tags" class="flex flex-wrap gap-2 max-h-[100px] overflow-y-auto mobile-scrollbar">
+                <!-- 所有标签将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </main>
+
+    <!-- 底部导航栏 -->
+    <nav class="bg-white nav-shadow py-2 px-4 fixed bottom-0 left-0 right-0 z-10">
+        <div class="flex justify-around">
+            <a href="index.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-home text-xl"></i>
+                <span class="text-xs mt-1">首页</span>
+            </a>
+            <a href="quadrant.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-th text-xl"></i>
+                <span class="text-xs mt-1">四象限</span>
+            </a>
+            <a href="todo.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-check-square-o text-xl"></i>
+                <span class="text-xs mt-1">待办</span>
+            </a>
+            <a href="more.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-ellipsis-h text-xl"></i>
+                <span class="text-xs mt-1">更多</span>
+            </a>
+            <a href="guide.html" class="flex flex-col items-center py-1 text-gray-500 hover:text-primary transition-colors">
+                <i class="fa fa-question-circle text-xl"></i>
+                <span class="text-xs mt-1">使用指引</span>
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        // 确保内容不会被底部导航遮挡
+        document.addEventListener('DOMContentLoaded', function() {
+            const mainContent = document.querySelector('main');
+            const navHeight = document.querySelector('nav').offsetHeight;
+            mainContent.style.paddingBottom = `${navHeight + 20}px`;
+        });
+
+        // 笔记数据结构
+        let notes = [];
+        let currentNoteId = null;
+        let viewMode = 'grid'; // 默认网格视图
+        let currentTagFilter = null;
+
+        // DOM 元素
+        const notesList = document.getElementById('notes-list');
+        const noteTitle = document.getElementById('note-title');
+        const noteContent = document.getElementById('note-content');
+        const saveNoteBtn = document.getElementById('save-note-btn');
+        const deleteNoteBtn = document.getElementById('delete-note-btn');
+        const newNoteBtn = document.getElementById('new-note-btn');
+        const viewModeBtn = document.getElementById('view-mode-btn');
+        const searchInput = document.getElementById('search-notes');
+        const tagInput = document.getElementById('tag-input');
+        const addTagBtn = document.getElementById('add-tag-btn');
+        const tagsContainer = document.getElementById('tags-container');
+        const allTagsContainer = document.getElementById('all-tags');
+        const noteDate = document.getElementById('note-date');
+        const noteUpdated = document.getElementById('note-updated');
+
+        // 初始化
+        function init() {
+            // 从本地存储加载笔记
+            loadNotes();
+            
+            // 绑定事件
+            saveNoteBtn.addEventListener('click', saveNote);
+            deleteNoteBtn.addEventListener('click', deleteNote);
+            newNoteBtn.addEventListener('click', createNewNote);
+            viewModeBtn.addEventListener('click', toggleViewMode);
+            searchInput.addEventListener('input', filterNotes);
+            addTagBtn.addEventListener('click', addTag);
+            tagInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addTag();
+                }
+            });
+            
+            // 自动保存
+            noteTitle.addEventListener('input', debounce(autoSave, 1000));
+            noteContent.addEventListener('input', debounce(autoSave, 1000));
+            
+            // 显示笔记列表
+            renderNotesList();
+            renderAllTags();
+        }
+
+        // 从本地存储加载笔记
+        function loadNotes() {
+            const savedNotes = localStorage.getItem('notesData');
+            if (savedNotes) {
+                notes = JSON.parse(savedNotes);
+            }
+        }
+
+        // 保存笔记到本地存储
+        function saveNotesToLocalStorage() {
+            localStorage.setItem('notesData', JSON.stringify(notes));
+        }
+
+        // 创建新笔记
+        function createNewNote() {
+            const now = new Date();
+            const newNote = {
+                id: Date.now().toString(),
+                title: '无标题笔记',
+                content: '<p>开始输入您的笔记内容...</p>',
+                tags: [],
+                createdAt: now.toISOString(),
+                updatedAt: now.toISOString()
+            };
+            
+            notes.unshift(newNote);
+            currentNoteId = newNote.id;
+            saveNotesToLocalStorage();
+            renderNotesList();
+            loadNoteForEditing(currentNoteId);
+        }
+
+        // 加载笔记进行编辑
+        function loadNoteForEditing(id) {
+            const note = notes.find(note => note.id === id);
+            if (note) {
+                currentNoteId = note.id;
+                noteTitle.value = note.title;
+                noteContent.innerHTML = note.content;
+                deleteNoteBtn.disabled = false;
+                
+                // 更新标签显示
+                renderNoteTags(note.tags);
+                
+                // 更新时间显示
+                const createdDate = new Date(note.createdAt);
+                const updatedDate = new Date(note.updatedAt);
+                noteDate.textContent = `创建时间: ${formatDate(createdDate)}`;
+                noteUpdated.textContent = `更新时间: ${formatDate(updatedDate)}`;
+                
+                // 高亮选中的笔记
+                highlightSelectedNote(id);
+            }
+        }
+
+        // 保存笔记
+        function saveNote() {
+            if (currentNoteId) {
+                const noteIndex = notes.findIndex(note => note.id === currentNoteId);
+                if (noteIndex !== -1) {
+                    notes[noteIndex].title = noteTitle.value || '无标题笔记';
+                    notes[noteIndex].content = noteContent.innerHTML;
+                    notes[noteIndex].updatedAt = new Date().toISOString();
+                    saveNotesToLocalStorage();
+                    renderNotesList();
+                    renderAllTags();
+                    
+                    // 显示保存成功提示
+                    showNotification('笔记已保存');
+                }
+            }
+        }
+
+        // 自动保存
+        function autoSave() {
+            saveNote();
+        }
+
+        // 删除笔记
+        function deleteNote() {
+            if (currentNoteId && confirm('确定要删除这条笔记吗？')) {
+                notes = notes.filter(note => note.id !== currentNoteId);
+                saveNotesToLocalStorage();
+                
+                // 重置编辑区
+                noteTitle.value = '';
+                noteContent.innerHTML = '<p>开始输入您的笔记内容...</p>';
+                tagsContainer.innerHTML = '';
+                deleteNoteBtn.disabled = true;
+                currentNoteId = null;
+                
+                renderNotesList();
+                renderAllTags();
+                
+                // 显示删除成功提示
+                showNotification('笔记已删除');
+            }
+        }
+
+        // 渲染笔记列表
+        function renderNotesList() {
+            notesList.innerHTML = '';
+            
+            // 根据视图模式设置列表容器的样式
+            if (viewMode === 'grid') {
+                notesList.className = 'grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[250px] md:max-h-[500px] overflow-y-auto mobile-scrollbar';
+            } else {
+                notesList.className = 'space-y-2 max-h-[250px] md:max-h-[500px] overflow-y-auto mobile-scrollbar';
+            }
+            
+            let filteredNotes = [...notes];
+            
+            // 应用标签过滤
+            if (currentTagFilter) {
+                filteredNotes = filteredNotes.filter(note => 
+                    note.tags.includes(currentTagFilter)
+                );
+            }
+            
+            // 应用搜索过滤
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            if (searchTerm) {
+                filteredNotes = filteredNotes.filter(note => 
+                    note.title.toLowerCase().includes(searchTerm) ||
+                    note.content.toLowerCase().includes(searchTerm) ||
+                    note.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            if (filteredNotes.length === 0) {
+                const emptyState = document.createElement('div');
+                emptyState.className = 'text-center py-8 text-gray-500';
+                emptyState.innerHTML = '<i class="fa fa-sticky-note-o text-3xl mb-2"></i><p>没有找到匹配的笔记</p>';
+                notesList.appendChild(emptyState);
+                return;
+            }
+            
+            filteredNotes.forEach(note => {
+                const noteItem = document.createElement('div');
+                // 根据视图模式设置笔记项的样式
+                if (viewMode === 'grid') {
+                    noteItem.className = `p-3 rounded-lg border cursor-pointer note-hover ${currentNoteId === note.id ? 'border-primary bg-blue-50' : 'border-gray-200 hover:border-primary'} h-full`;
+                } else {
+                    noteItem.className = `p-3 rounded-lg border cursor-pointer note-hover ${currentNoteId === note.id ? 'border-primary bg-blue-50' : 'border-gray-200 hover:border-primary'}`;
+                }
+                
+                // 创建笔记标题
+                const title = document.createElement('h3');
+                title.className = 'font-medium text-gray-800 mb-1 line-clamp-1';
+                title.textContent = note.title;
+                
+                // 创建笔记内容预览
+                const contentPreview = document.createElement('p');
+                contentPreview.className = 'text-sm text-gray-600 line-clamp-2';
+                // 去除HTML标签
+                const plainText = note.content.replace(/<[^>]*>/g, '');
+                contentPreview.textContent = plainText;
+                
+                // 创建笔记标签预览
+                const tagsPreview = document.createElement('div');
+                tagsPreview.className = 'flex flex-wrap gap-1 mt-2';
+                
+                // 只显示前3个标签
+                const displayTags = note.tags.slice(0, 3);
+                displayTags.forEach(tag => {
+                    const tagEl = document.createElement('span');
+                    tagEl.className = 'inline-block px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full';
+                    tagEl.textContent = tag;
+                    tagsPreview.appendChild(tagEl);
+                });
+                
+                // 如果标签超过3个，显示省略号
+                if (note.tags.length > 3) {
+                    const moreTags = document.createElement('span');
+                    moreTags.className = 'inline-block px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full';
+                    moreTags.textContent = `+${note.tags.length - 3}`;
+                    tagsPreview.appendChild(moreTags);
+                }
+                
+                // 创建笔记时间
+                const timeInfo = document.createElement('div');
+                timeInfo.className = 'text-xs text-gray-400 mt-2';
+                const updatedDate = new Date(note.updatedAt);
+                timeInfo.textContent = formatDate(updatedDate, true);
+                
+                // 组装笔记项
+                noteItem.appendChild(title);
+                noteItem.appendChild(contentPreview);
+                if (note.tags.length > 0) {
+                    noteItem.appendChild(tagsPreview);
+                }
+                noteItem.appendChild(timeInfo);
+                
+                // 添加点击事件
+                noteItem.addEventListener('click', () => loadNoteForEditing(note.id));
+                
+                notesList.appendChild(noteItem);
+            });
+        }
+
+        // 渲染笔记的标签
+        function renderNoteTags(tags) {
+            tagsContainer.innerHTML = '';
+            
+            tags.forEach(tag => {
+                const tagEl = document.createElement('div');
+                tagEl.className = 'inline-flex items-center bg-gray-100 text-gray-700 text-sm px-2 py-1 rounded-full';
+                tagEl.innerHTML = `
+                    <span>${tag}</span>
+                    <button class="ml-1 text-gray-500 hover:text-red-500" onclick="removeTag('${tag}')">
+                        <i class="fa fa-times"></i>
+                    </button>
+                `;
+                tagsContainer.appendChild(tagEl);
+            });
+        }
+
+        // 渲染所有标签（用于筛选）
+        function renderAllTags() {
+            allTagsContainer.innerHTML = '';
+            
+            // 获取所有唯一标签
+            const allTags = new Set();
+            notes.forEach(note => {
+                note.tags.forEach(tag => allTags.add(tag));
+            });
+            
+            // 添加"全部"标签
+            const allTagBtn = document.createElement('button');
+            allTagBtn.className = `px-3 py-1 text-sm rounded-full ${currentTagFilter === null ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`;
+            allTagBtn.textContent = '全部';
+            allTagBtn.addEventListener('click', () => {
+                currentTagFilter = null;
+                renderAllTags();
+                renderNotesList();
+            });
+            allTagsContainer.appendChild(allTagBtn);
+            
+            // 添加分隔符
+            allTagsContainer.appendChild(document.createTextNode(' '));
+            
+            // 添加其他标签
+            Array.from(allTags).sort().forEach(tag => {
+                const tagBtn = document.createElement('button');
+                tagBtn.className = `px-3 py-1 text-sm rounded-full ${currentTagFilter === tag ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`;
+                tagBtn.textContent = tag;
+                tagBtn.addEventListener('click', () => {
+                    currentTagFilter = currentTagFilter === tag ? null : tag;
+                    renderAllTags();
+                    renderNotesList();
+                });
+                allTagsContainer.appendChild(tagBtn);
+                allTagsContainer.appendChild(document.createTextNode(' '));
+            });
+        }
+
+        // 添加标签
+        function addTag() {
+            const tagText = tagInput.value.trim();
+            if (tagText && currentNoteId) {
+                const noteIndex = notes.findIndex(note => note.id === currentNoteId);
+                if (noteIndex !== -1 && !notes[noteIndex].tags.includes(tagText)) {
+                    notes[noteIndex].tags.push(tagText);
+                    saveNotesToLocalStorage();
+                    renderNoteTags(notes[noteIndex].tags);
+                    renderAllTags();
+                    tagInput.value = '';
+                }
+            }
+        }
+
+        // 移除标签
+        function removeTag(tagToRemove) {
+            if (currentNoteId) {
+                const noteIndex = notes.findIndex(note => note.id === currentNoteId);
+                if (noteIndex !== -1) {
+                    notes[noteIndex].tags = notes[noteIndex].tags.filter(tag => tag !== tagToRemove);
+                    saveNotesToLocalStorage();
+                    renderNoteTags(notes[noteIndex].tags);
+                    renderAllTags();
+                }
+            }
+        }
+
+        // 切换视图模式
+        function toggleViewMode() {
+            viewMode = viewMode === 'grid' ? 'list' : 'grid';
+            viewModeBtn.innerHTML = viewMode === 'grid' ? 
+                '<i class="fa fa-th-large mr-2"></i>视图' : 
+                '<i class="fa fa-list mr-2"></i>视图';
+            renderNotesList();
+        }
+
+        // 过滤笔记
+        function filterNotes() {
+            renderNotesList();
+        }
+
+        // 高亮选中的笔记
+        function highlightSelectedNote(id) {
+            const noteItems = notesList.querySelectorAll('div.p-3');
+            noteItems.forEach(item => {
+                const isSelected = item.querySelector('h3').textContent === notes.find(note => note.id === id)?.title;
+                if (isSelected) {
+                    item.classList.add('border-primary', 'bg-blue-50');
+                    item.classList.remove('border-gray-200');
+                } else {
+                    item.classList.remove('border-primary', 'bg-blue-50');
+                    item.classList.add('border-gray-200');
+                }
+            });
+        }
+
+        // 文本格式化函数
+        function formatText(command) {
+            document.execCommand(command, false, null);
+            noteContent.focus();
+        }
+
+        // 插入图片
+        function insertImage() {
+            const imageUrl = prompt('请输入图片URL:');
+            if (imageUrl) {
+                document.execCommand('insertImage', false, imageUrl);
+                noteContent.focus();
+            }
+        }
+
+        // 插入链接
+        function insertLink() {
+            const linkText = prompt('请输入链接文本:');
+            const linkUrl = prompt('请输入链接URL:');
+            if (linkText && linkUrl) {
+                document.execCommand('createLink', false, linkUrl);
+                // 选择刚刚创建的链接
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    const linkNode = range.commonAncestorContainer.parentNode;
+                    if (linkNode.tagName === 'A') {
+                        linkNode.textContent = linkText;
+                        linkNode.target = '_blank';
+                    }
+                }
+                noteContent.focus();
+            }
+        }
+
+        // 显示通知
+        function showNotification(message) {
+            // 创建通知元素
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-y-[-20px] opacity-0';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            // 显示通知
+            setTimeout(() => {
+                notification.classList.remove('translate-y-[-20px]', 'opacity-0');
+            }, 10);
+            
+            // 3秒后隐藏通知
+            setTimeout(() => {
+                notification.classList.add('translate-y-[-20px]', 'opacity-0');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // 日期格式化
+        function formatDate(date, short = false) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            if (short) {
+                // 检查是否是今天
+                const today = new Date();
+                if (date.toDateString() === today.toDateString()) {
+                    return `今天 ${hours}:${minutes}`;
+                }
+                // 检查是否是昨天
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                if (date.toDateString() === yesterday.toDateString()) {
+                    return `昨天 ${hours}:${minutes}`;
+                }
+                // 检查是否是今年
+                if (date.getFullYear() === today.getFullYear()) {
+                    return `${month}/${day} ${hours}:${minutes}`;
+                }
+            }
+            
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
+        }
+
+        // 防抖函数
+        function debounce(func, wait) {
+            let timeout;
+            return function() {
+                const context = this;
+                const args = arguments;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), wait);
+            };
+        }
+
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
