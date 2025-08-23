@@ -1785,23 +1785,16 @@ banana n.香蕉"></textarea>
                             line = line.trim();
                             if (!line) continue;
                             
-                            // 尝试解析每一行：单词 词性.中文意思
-                            const parts = line.split(/\s+/);
-                            if (parts.length < 2) {
+                            // 新的解析逻辑：匹配直到词性前的所有内容作为单词
+                            const posMatch = line.match(/\s+([a-zA-Z]+\.)/);
+                            if (!posMatch) {
                                 alert(`格式错误: "${line}"，请使用正确格式：单词 词性.中文意思`);
                                 return;
                             }
                             
-                            const word = parts[0];
-                            const rest = parts.slice(1).join(' ');
-                            const posMatch = rest.match(/^([a-zA-Z]+\.)/);
-                            if (!posMatch) {
-                                alert(`格式错误: "${line}"，词性部分必须以英文句点结尾，如"n.苹果"`);
-                                return;
-                            }
-                            
-                            const pos = posMatch[0];
-                            const meaning = rest.slice(pos.length).trim();
+                            const word = line.substring(0, posMatch.index).trim();
+                            const pos = posMatch[1];
+                            const meaning = line.substring(posMatch.index + posMatch[0].length).trim();
                             
                             words.push({ word, pos, meaning });
                         }
@@ -2204,23 +2197,16 @@ banana n.香蕉"></textarea>
                 line = line.trim();
                 if (!line) continue;
                 
-                // 尝试解析每一行：单词 词性.中文意思
-                const parts = line.split(/\s+/);
-                if (parts.length < 2) {
+                // 新的解析逻辑：匹配直到词性前的所有内容作为单词
+                const posMatch = line.match(/\s+([a-zA-Z]+\.)/);
+                if (!posMatch) {
                     alert(`格式错误: "${line}"，请使用正确格式：单词 词性.中文意思`);
                     return;
                 }
                 
-                const word = parts[0];
-                const rest = parts.slice(1).join(' ');
-                const posMatch = rest.match(/^([a-zA-Z]+\.)/);
-                if (!posMatch) {
-                    alert(`格式错误: "${line}"，词性部分必须以英文句点结尾，如"n.苹果"`);
-                    return;
-                }
-                
-                const pos = posMatch[0];
-                const meaning = rest.slice(pos.length).trim();
+                const word = line.substring(0, posMatch.index).trim();
+                const pos = posMatch[1];
+                const meaning = line.substring(posMatch.index + posMatch[0].length).trim();
                 
                 words.push({ word, pos, meaning });
             }
