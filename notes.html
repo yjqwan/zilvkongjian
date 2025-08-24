@@ -53,6 +53,66 @@
                 background-color: rgba(0,0,0,0.2);
                 border-radius: 2px;
             }
+            /* 图片预览样式 */
+            .image-preview {
+                max-width: 100%;
+                max-height: 200px;
+                margin: 10px 0;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: transform 0.3s ease;
+            }
+            .image-preview:hover {
+                transform: scale(1.02);
+            }
+            /* 图片模态框 */
+            .image-modal {
+                display: none;
+                position: fixed;
+                z-index: 100;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.9);
+                overflow: auto;
+            }
+            .modal-content {
+                display: block;
+                margin: auto;
+                max-width: 90%;
+                max-height: 80%;
+                margin-top: 5%;
+                border-radius: 8px;
+            }
+            .close-modal {
+                position: absolute;
+                top: 15px;
+                right: 35px;
+                color: #f1f1f1;
+                font-size: 40px;
+                font-weight: bold;
+                cursor: pointer;
+            }
+            /* 链接样式 */
+            .note-editor a {
+                color: #3B82F6;
+                text-decoration: underline;
+                cursor: pointer;
+            }
+            /* 长按提示 */
+            .link-hint {
+                position: fixed;
+                background-color: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 14px;
+                z-index: 50;
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.3s;
+            }
         }
     </style>
 </head>
@@ -199,6 +259,18 @@
         </div>
     </nav>
 
+    <!-- 隐藏的文件输入元素，用于选择图片 -->
+    <input type="file" id="image-file-input" accept="image/*" style="display: none;">
+
+    <!-- 图片模态框 -->
+    <div id="image-modal" class="image-modal">
+        <span class="close-modal" id="close-modal">&times;</span>
+        <img class="modal-content" id="modal-image">
+    </div>
+
+    <!-- 长按提示 -->
+    <div id="link-hint" class="link-hint">长按复制链接</div>
+
     <script>
         // 确保内容不会被底部导航遮挡
         document.addEventListener('DOMContentLoaded', function() {
@@ -228,6 +300,11 @@
         const allTagsContainer = document.getElementById('all-tags');
         const noteDate = document.getElementById('note-date');
         const noteUpdated = document.getElementById('note-updated');
+        const imageFileInput = document.getElementById('image-file-input');
+        const imageModal = document.getElementById('image-modal');
+        const modalImage = document.getElementById('modal-image');
+        const closeModal = document.getElementById('close-modal');
+        const linkHint = document.getElementById('link-hint');
 
         // 初始化
         function init() {
@@ -247,9 +324,33 @@
                 }
             });
             
+            // 文件输入事件处理
+            imageFileInput.addEventListener('change', handleImageUpload);
+            
+            // 图片模态框事件
+            closeModal.addEventListener('click', closeImageModal);
+            imageModal.addEventListener('click', function(e) {
+                if (e.target === imageModal) {
+                    closeImageModal();
+                }
+            });
+            
+            // 添加键盘事件监听，ESC键关闭模态框
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeImageModal();
+                }
+            });
+            
             // 自动保存
             noteTitle.addEventListener('input', debounce(autoSave, 1000));
             noteContent.addEventListener('input', debounce(autoSave, 1000));
+            
+            // 为编辑区域添加事件委托，处理图片和链接的交互
+            noteContent.addEventListener('dblclick', handleDoubleClick);
+            noteContent.addEventListener('touchstart', handleTouchStart, {passive: false});
+            noteContent.addEventListener('touchend', handleTouchEnd, {passive: true});
+            noteContent.addEventListener('contextmenu', handleContextMenu);
             
             // 显示笔记列表
             renderNotesList();
@@ -261,6 +362,17 @@
             const savedNotes = localStorage.getItem('notesData');
             if (savedNotes) {
                 notes = JSON.parse(savedNotes);
+            } else {
+                // 添加示例笔记
+                notes = [{
+                    id: 'demo-note-1',
+                    title: '欢迎使用备忘录',
+                    content: '<p>这是您的第一条备忘录！</p><p>您可以：</p><ul><li>创建新笔记</li><li>添加标签进行分类</li><li>使用文本格式化工具</li><li>插入图片和链接</li></ul>',
+                    tags: ['示例', '欢迎'],
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }];
+                saveNotesToLocalStorage();
             }
         }
 
@@ -401,6 +513,8 @@
                 } else {
                     noteItem.className = `p-3 rounded-lg border cursor-pointer note-hover ${currentNoteId === note.id ? 'border-primary bg-blue-50' : 'border-gray-200 hover:border-primary'}`;
                 }
+                
+                noteItem.dataset.noteId = note.id; // 添加data属性
                 
                 // 创建笔记标题
                 const title = document.createElement('h3');
@@ -558,8 +672,8 @@
         function highlightSelectedNote(id) {
             const noteItems = notesList.querySelectorAll('div.p-3');
             noteItems.forEach(item => {
-                const isSelected = item.querySelector('h3').textContent === notes.find(note => note.id === id)?.title;
-                if (isSelected) {
+                // 使用data-id属性而不是标题文本匹配
+                if (item.dataset.noteId === id) {
                     item.classList.add('border-primary', 'bg-blue-50');
                     item.classList.remove('border-gray-200');
                 } else {
@@ -575,13 +689,65 @@
             noteContent.focus();
         }
 
-        // 插入图片
+        // 插入图片 - 修改后的版本
         function insertImage() {
-            const imageUrl = prompt('请输入图片URL:');
-            if (imageUrl) {
-                document.execCommand('insertImage', false, imageUrl);
-                noteContent.focus();
+            // 触发隐藏的文件输入元素
+            imageFileInput.click();
+        }
+
+        // 处理图片上传
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // 检查文件类型
+            if (!file.type.match('image.*')) {
+                showNotification('请选择有效的图片文件');
+                return;
             }
+            
+            // 检查文件大小 (限制为5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showNotification('图片大小不能超过5MB');
+                return;
+            }
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'image-preview';
+                
+                // 插入到编辑区域
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    range.insertNode(img);
+                    
+                    // 将光标移动到图片后面
+                    range.setStartAfter(img);
+                    range.setEndAfter(img);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                } else {
+                    noteContent.appendChild(img);
+                }
+                
+                noteContent.focus();
+                
+                // 自动保存
+                autoSave();
+            };
+            
+            reader.onerror = function() {
+                showNotification('图片读取失败，请重试');
+            };
+            
+            reader.readAsDataURL(file);
+            
+            // 重置文件输入，允许再次选择同一文件
+            event.target.value = '';
         }
 
         // 插入链接
@@ -589,19 +755,136 @@
             const linkText = prompt('请输入链接文本:');
             const linkUrl = prompt('请输入链接URL:');
             if (linkText && linkUrl) {
-                document.execCommand('createLink', false, linkUrl);
+                const url = linkUrl.startsWith('http') ? linkUrl : 'http://' + linkUrl;
+                document.execCommand('createLink', false, url);
+                
                 // 选择刚刚创建的链接
                 const selection = window.getSelection();
                 if (selection.rangeCount > 0) {
                     const range = selection.getRangeAt(0);
-                    const linkNode = range.commonAncestorContainer.parentNode;
-                    if (linkNode.tagName === 'A') {
-                        linkNode.textContent = linkText;
-                        linkNode.target = '_blank';
+                    const parentElement = range.commonAncestorContainer.parentElement;
+                    
+                    if (parentElement.tagName === 'A') {
+                        parentElement.textContent = linkText;
+                        parentElement.target = '_blank';
+                    } else {
+                        // 如果没有正确创建链接，尝试手动创建
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.target = '_blank';
+                        a.textContent = linkText;
+                        
+                        // 清除选择并插入链接
+                        range.deleteContents();
+                        range.insertNode(a);
+                        
+                        // 将光标移动到链接后面
+                        range.setStartAfter(a);
+                        range.setEndAfter(a);
+                        selection.removeAllRanges();
+                        selection.addRange(range);
                     }
                 }
                 noteContent.focus();
             }
+        }
+
+        // 处理双击事件
+        function handleDoubleClick(e) {
+            // 双击图片放大
+            if (e.target.tagName === 'IMG') {
+                openImageModal(e.target.src);
+            }
+            // 双击链接在新标签页中打开
+            else if (e.target.tagName === 'A') {
+                window.open(e.target.href, '_blank');
+            }
+        }
+
+        // 打开图片模态框
+        function openImageModal(src) {
+            modalImage.src = src;
+            imageModal.style.display = 'block';
+            document.body.style.overflow = 'hidden'; // 防止背景滚动
+        }
+
+        // 关闭图片模态框
+        function closeImageModal() {
+            imageModal.style.display = 'none';
+            document.body.style.overflow = 'auto'; // 恢复背景滚动
+        }
+
+        // 处理触摸开始事件（用于长按检测）
+        let touchTimer = null;
+        let longPressedElement = null;
+        
+        function handleTouchStart(e) {
+            // 检查是否触摸在链接上
+            if (e.target.tagName === 'A') {
+                longPressedElement = e.target;
+                
+                // 显示提示
+                showLinkHint(e.target);
+                
+                // 设置定时器检测长按
+                touchTimer = setTimeout(() => {
+                    copyLinkToClipboard(e.target.href);
+                    showNotification('链接已复制到剪贴板');
+                    
+                    // 隐藏提示
+                    hideLinkHint();
+                }, 800); // 800毫秒视为长按
+                
+                // 阻止默认行为以避免触发系统上下文菜单
+                e.preventDefault();
+            }
+        }
+
+        // 处理触摸结束事件
+        function handleTouchEnd(e) {
+            if (touchTimer) {
+                clearTimeout(touchTimer);
+                touchTimer = null;
+                
+                // 隐藏提示
+                hideLinkHint();
+            }
+        }
+
+        // 处理右键菜单事件（桌面端长按替代方案）
+        function handleContextMenu(e) {
+            if (e.target.tagName === 'A') {
+                e.preventDefault();
+                copyLinkToClipboard(e.target.href);
+                showNotification('链接已复制到剪贴板');
+            }
+        }
+
+        // 显示链接提示
+        function showLinkHint(element) {
+            const rect = element.getBoundingClientRect();
+            linkHint.style.left = rect.left + 'px';
+            linkHint.style.top = (rect.top - 40) + 'px';
+            linkHint.style.opacity = '1';
+        }
+
+        // 隐藏链接提示
+        function hideLinkHint() {
+            linkHint.style.opacity = '0';
+        }
+
+        // 复制链接到剪贴板
+        function copyLinkToClipboard(url) {
+            navigator.clipboard.writeText(url).catch(err => {
+                console.error('无法复制链接: ', err);
+                // 备用方法
+                const textArea = document.createElement('textarea');
+                textArea.value = url;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+            });
         }
 
         // 显示通知
