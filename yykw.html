@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>沪教牛津八上英语课文选择填空</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .selection-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .exercise-container {
+            margin-top: 20px;
+        }
+        .passage {
+            line-height: 1.6;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+        .passage p {
+            margin-bottom: 15px;
+        }
+        .passage p:last-child {
+            margin-bottom: 0;
+        }
+        .blank {
+            display: inline-block;
+            margin: 0 2px;
+            position: relative;
+        }
+        select.blank-select {
+            width: 120px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .correct {
+            background-color: #d4edda;
+        }
+        .incorrect {
+            background-color: #f8d7da;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+        .translation {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-left: 4px solid #3498db;
+        }
+        .translation p {
+            margin-bottom: 10px;
+        }
+        .translation p:last-child {
+            margin-bottom: 0;
+        }
+        .score {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .answers {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e9f5ff;
+            border-radius: 4px;
+        }
+        .answers h3 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        .answer-item {
+            margin-bottom: 5px;
+        }
+        .hidden {
+            display: none;
+        }
+        
+        .error-highlight {
+            color: red;
+            font-weight: bold;
+        }
+        
+        .highlight {
+            background-color: yellow;
+            font-weight: bold;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>沪教牛津八上英语课文选择填空</h1>
+        
+        <div class="selection-panel">
+            <div class="form-group">
+                <label for="unit-select">选择单元:</label>
+                <select id="unit-select">
+                    <option value="unit1">Unit 1: Leonardo da Vinci & Dinosaurs</option>
+                    <option value="unit2">Unit 2: The old man and the king</option>
+                    <option value="unit3">Unit 3: Smart life in the future</option>
+                    <option value="unit4">Unit 4: The wonder of the wheel</option>
+                    <option value="unit5">Unit 5: Exchange visit in Beijing</option>
+                    <option value="unit6">Unit 6: The night of the horse</option>
+                    <option value="unit7">Unit 7: Ways to improve your memory</option>
+                    <option value="unit8">Unit 8: Keeping pet dogs</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="blank-count">挖空数量 (5-25):</label>
+                <input type="number" id="blank-count" min="5" max="25" value="10">
+            </div>
+            
+            <div class="form-group" style="display: flex; align-items: flex-end;">
+                <button id="generate-btn">生成练习</button>
+            </div>
+        </div>
+        
+        <div id="exercise-container" class="exercise-container hidden">
+            <div id="loading" class="loading hidden">正在生成练习，请稍候...</div>
+            <div id="passage" class="passage"></div>
+            
+            <button id="submit-btn" style="margin-top: 10px;">提交答案</button>
+            
+            <div id="results" class="results hidden">
+                <div id="score" class="score"></div>
+                <div class="answers">
+                    <h3>正确答案:</h3>
+                    <div id="correct-answers-list"></div>
+                </div>
+                <div id="translation" class="translation"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 课文数据
+        const passages = {
+            unit1: {
+                title: "Unit 1: Leonardo da Vinci & Dinosaurs",
+                content: `<p>Leonardo da Vinci (1452–1519) was an Italian painter, inventor, musician, engineer and scientist. Da Vinci was extremely intelligent, and he was unusually talented in many different fields. He was a true genius, and his paintings and inventions changed the way we think about art and science. Leonardo da Vinci was born in the countryside in Italy. From an early age, he showed great intelligence and artistic talent. As he grew older, he learnt to do many different things. His paintings are very famous, and one, the Mona Lisa, is perhaps the most famous painting in the world. He also had many inventions. For example, his notebooks include some interesting drawings of flying machines and other vehicles.</p><p>Dinosaurs are a type of prehistoric animal. They are related to crocodiles, snakes and lizards. They are also the ancestors of today's birds. Dinosaurs first appeared around 245 million years ago. The word "dinosaur" comes from two Greek words, and it means "terrible lizard". Dinosaurs lived on land and walked on either two or four legs. Many dinosaurs ate plants, but some ate meat. Dinosaurs came in different sizes. Some were as small as chickens, and others were as big as ten elephants. Dinosaurs ruled the Earth for more than 180 million years. About 66 million years ago, dinosaurs suddenly died out. Scientists are not completely sure why. However, they are learning more and more about dinosaurs by studying their fossils.</p>`,
+                translation: `<p>列奥纳多·达·芬奇（1452—1519）是意大利画家、发明家、音乐家、工程师和科学家。达·芬奇非常聪明，他在许多不同的领域都有不同寻常的才能。他是一名真正的天才，他的绘画和发明改变了我们对艺术和科学的看法。列奥纳多·达·芬奇出生在意大利的乡村。从很小的时候起，他就展现了极高的智慧和艺术天赋。随着年龄的增长，他学会了做许多不同的事情。他的作品非常有名，其中一幅《蒙娜丽莎》也许是世界上最著名的画。他也有许多发明。例如，他的笔记本中有一些有趣的飞行器和其他交通工具的图画。</p><p>恐龙是一种史前动物。它们与鳄鱼、蛇和蜥蜴属于同一种类。它们也是今天鸟类的祖先。恐龙最早出现在 2.45 亿年前。"恐龙"这个词来自两个希腊单词，意思是"可怕的蜥蜴"。恐龙生活在陆地上，用两条腿或四条腿行走。许多恐龙以植物为食，但也有一些以肉为食。恐龙有不同的大小。有些像鸡一样小，有些有十头大象那么大。恐龙统治地球超过 1.8 亿年。大约 6600 万年前，恐龙突然灭绝。科学家们并不完全确定原因。然而，通过研究恐龙化石，他们对恐龙的了解越来越多。</p>`
+            },
+            unit2: {
+                title: "Unit 2: The old man and the king",
+                content: `<p>A long time ago, there was a king in India. The king's favourite game was chess. One day, a wise old man came to the palace and the king challenged him to a game. "You can have any prize if you win the game," the king promised the old man. The old man thought for a moment and said slowly, "If I win the game, I'd like one grain of rice for the first square of the chessboard, two for the second, four for the third ... I'd like you to double the amount for each of the rest of the squares."</p><p>The king was very surprised. "Is that all?" he asked. "Wouldn't you like gold or silver instead?" "No, just rice," the old man replied without hesitation. "How many grains of rice will this be?" the king wondered, "There are 64 squares on the chessboard, so there will be one, two, four, eight, sixteen, ... Perhaps a bag of rice is enough." After thinking about it for a moment, the king agreed.</p>`,
+                translation: `<p>很久以前，印度有一位国王。国王最喜欢的游戏是下国际象棋。一天，一位充满智慧的长者来到王宫，国王向他发起了挑战。"如果你赢了这场比赛，你可以获得任何奖品。"国王向老人承诺道。老人思考了一会儿，缓缓说道："如果我赢了，我想要在国际象棋盘的第一个方格里放一粒米，第二个方格里放两粒，第三个方格里放四粒……我想要你在剩余的每个格里依次增加一倍大米的数量。"</p><p>国王非常惊讶。"就这些？"他问道，"你难道不想要金子或银子来代替（大米）吗？""不，只要大米。"老人毫不犹豫地回答。"这得有多少粒米呢？"国王暗自琢磨，"棋盘上有 64 个方格，也就是 1 粒、2 粒、4 粒、8 粒、16 粒……也许一袋大米就够了。"思考片刻后，国王同意了。</p>`
+            },
+            unit3: {
+                title: "Unit 3: Smart life in the future",
+                content: `<p>The internet has brought big changes to everyday life. For example, e-learning and mobile payment have changed the way we study and shop. In the future, even more things will be connected to the internet, so life will continue to change.</p><p>Take health for example. We'll probably wear small devices all the time, and they'll check our health and warn us about health problems. With this information, doctors can provide better treatment.</p><p>As more things become connected to the internet, our cities will become smart cities. Smart cities will be more eco-friendly than cities today. One of the most important changes will come in energy use. Different devices will communicate and share data with each other. This will help them save energy. For example, smart rubbish bins will automatically tell the smart city network when they are full. This data will allow the rubbish collection company to plan better collection routes.</p><p>I think the biggest change will be in transport. Our roads will be much safer in the future, and traffic will flow more smoothly. There will be fewer accidents because cars will drive themselves, and they will share data with the smart city network. With this data, traffic lights can change the timing according to the number of cars on the road.</p>`,
+                translation: `<p>互联网已经给日常生活带来了巨大的变化。例如，在线学习和移动支付已经改变了我们学习和购物的方式。未来，甚至更多的东西将连接到互联网，所以生活将继续变化。</p><p>以健康为例。我们可能会一直佩戴小型设备，它们会检查我们的健康状况并提醒我们有关健康的问题。有了这些信息，医生可以提供更好的治疗。</p><p>随着更多的物品连接到互联网，我们的城市将成为智能城市。智能城市将比今天的城市更加环保。最重要的变化之一将出现在能源使用方面。不同的设备将相互通信并共享数据。这将帮助它们节省能源。例如，智能垃圾桶会在装满时自动通知智能城市网络。这些数据将允许垃圾收集公司更好地规划收集路线。</p><p>我认为最大的变化将是交通。我们的道路在未来将更加安全，交通将更加顺畅。由于汽车有自动驾驶，并且它们将与智能城市网络共享数据，因此事故将减少。有了这些数据，交通灯可以根据道路上的汽车数量调整时间。</p>`
+            },
+            unit4: {
+                title: "Unit 4: The wonder of the wheel",
+                content: `<p>When the first humans decided to leave their homes over 100,000 years ago in search of new places to live and better sources of food, they did it on foot. Humans continued walking across the globe for the next 94,000 years, until about 6,000 years ago when a number of important changes took place. For instance, in the Central Asian country of Kazakhstan, people started to ride horses. Although this meant that people could travel further and faster, transporting large amounts of goods was still a difficult job.</p><p>That all changed, however, a few hundred years later with the invention of the wheel. We will never know for sure who first invented the wheel, but the inventors probably first used wheels to make pottery. Later, they realized that they could also use them to transport people and things. They soon attached wheels to horse-pulled vehicles. Farmers were suddenly able to transport their goods to markets far away. This invention increased national and international trade.</p><p>The wheel changed the way villages, towns and even countries did business with each other, but it wasn't perfect. The roads were old walking paths. These old paths quickly became extremely difficult to use in wet weather. As a result, the first roads made of stone appeared after the arrival of the wheel. The Romans then invented new road-building techniques. The new roads were very good, and we still use some of them today.</p><p>The wheel not only changed the way humans move, but it also allowed us to build all types of amazing machines. Windmills, clocks and other machines all use wheels, and the Industrial Revolution depended on the wheel. Even in our digitalized world, we still use wheels in devices such as 3D printers. Without doubt, the wheel is one of the most important inventions of all time.</p>`,
+                translation: `<p>当最早的人类在十万多年前决定离开他们的家园，去寻找新的居住地和更好的食物来源时，他们靠的是步行。在接下来的九万四千年里人类继续步行穿越全球，直到大约六千年前发生了许多重要的变化。例如，在中亚国家哈萨克斯坦，人们开始骑马。虽然这意味着人们可以走得更远更快，但运输大量货物仍然是个艰难的工作。</p><p>然而，几百年后，随着轮子的发明，一切都改变了。我们永远无法确定谁首先发明了轮子，但发明者可能最初用轮子来做陶器。后来，他们意识到也可以用它们来运输人和物。他们很快将轮子安装在马拉的车辆上。农民突然能够将他们的货物运送到远方的市场。这项发明增加了国内和国际贸易。</p><p>轮子改变了村庄、城镇甚至国家之间做生意的方式，但它并不完美。道路依旧是旧的步行小道。这些路在潮湿的天气里很快就变得非常难以使用。因此，在轮子到来后，第一条石路上出现了。罗马人随后发明了新的筑路技术。新路非常好，其中的一些我们今天仍在使用。</p><p>轮子不仅改变了人类的移动方式，还使得我们能够创造各种令人惊叹的机器。风车、钟表和其他机器都使用轮子，工业革命依赖于轮子。即使在我们数字化的世界中，我们仍在 3D 打印机等设备中使用轮子。毫无疑问，轮子是有史以来最重要的发明之一。</p>`
+            },
+            unit5: {
+                title: "Unit 5: Exchange visit in Beijing",
+                content: `<p>A group of British students from Woodpark School in London are visiting Yangguang Junior High School. "I was very nervous at first," says Sarah. "However, my host family are really friendly. I'm really grateful that they let me stay in their home. I love Chinese food and enjoy every meal I have with my host family. I've learnt to use chopsticks, and I can speak a little Chinese!"</p><p>The students spend the weekdays studying with Chinese students. At the weekend, they go on tours with their host families around Beijing and visit places of interest, such as the Great Wall, the Summer Palace and the National Museum. "I've watched videos about the Great Wall before, but seeing it in person is definitely an unforgettable experience!" says Lisa. "The wall snakes its way through the mountains of north China for thousands of kilometres. The Great Wall is no doubt one of the most amazing achievements in human history!"</p><p>The students also spend time learning about Chinese culture. They get to try different things for themselves. "It's been a fantastic experience so far," says Eric. "I've learnt a bit of tai chi, and I really enjoy it. The teachers have introduced us to Chinese painting as well. The way of painting is very interesting. It's quite different from what I've learnt in my art classes back home. We dip the brush in black ink, and paint on a special kind of paper, called Xuan paper. I haven't had much success yet, but I'll keep trying."</p><p>"I've made many new friends," says Sarah. "I plan to keep in touch with them when I return home. We'll see one another soon because they'll come over to the UK for the second part of the exchange next month. I can't wait!"</p>`,
+                translation: `<p>一群来自伦敦伍德帕克学校的英国学生正在阳光中学访学。"起初我非常紧张，"萨拉说，"然而，我的寄宿家庭非常友好。我非常感谢他们让我住在他们家里。我喜欢中国食物，并且享受与寄宿家庭的每一餐。我已经学会了使用筷子，并且会说一点中文了！"</p><p>学生们用一星期五与中国学生一起学习。在周末，他们与寄宿家庭一起游览北京，参观名胜古迹，例如长城、颐和园和国家博物馆。"我以前看过关于长城的视频，但亲眼看到它绝对是一次难忘的经历！"丽莎说，"长城蜿蜒穿过中国北方的山区，长达数千公里。长城肯定是人类历史上最惊人的成就之一！"</p><p>学生们还花时间了解中国文化。他们亲自尝试不同的事情。"到目前为止，这是一次极好的经历，"埃里克说，"我学了一点太极，我真的很喜欢它。老师们也让我们了解了中国画。绘画的方式非常有趣。这与我在国内美术课上学习的非常不同。把我笔蘸上黑墨水，在一种叫作宣纸的特殊纸上画。我还没有取得太大的成功，但我将继续尝试。"</p><p>"我已经交了很多新朋友，"萨拉说，"我计划回家后与他们保持联系。我们很快就会再见面，因为他们下个月将来到英国进行交换访学的第二部分。我迫不及待了！"</p>`
+            },
+            unit6: {
+                title: "Unit 6: The night of the horse",
+                content: `<p>The soldier came down the stairs—two at a time. "Captain, they've gone," he cried. "The Greek soldiers have disappeared—all of them. I can't see ..." But the captain was no longer listening. He was going up the stairs—three at a time. Seconds later, the captain stood on the high wall of the city of Troy. He looked down at the empty Greek camp and, beyond it, at the empty sea. "They've gone and we've won," he said. "The Greek army has tried for ten years to capture our city. Now, they've sailed away and taken everything with them."</p><p>"Not everything, sir," the soldier said. "They've left their horse." Outside the main gate of the city stood a huge wooden horse. "Ah, yes," the captain said, "that wooden horse. It's so big that they couldn't take it with them. Well, it's ours now. Get some help and pull it into the city. That won't be difficult. It's on wheels." "But why is it on wheels?" asked the soldier. The captain stopped him and said, "You're a soldier. It's not your job to think. Your job is to obey orders, and I'm giving you one now. Move that horse!"</p><p>So the Trojans pulled the wooden horse into the city. That night, all the Trojans celebrated their victory in the main square. They sang and danced around the horse, and made jokes about the stupid Greeks. Then they made sure all the gates of the city were locked, and went to bed.</p><p>By midnight, the main square was empty, except for the huge horse. Some Greek soldiers were hiding inside. They waited for another hour, to be sure. Then, very carefully, they opened the secret door on the horse's side and climbed out. No guards were around so they quietly made their way to the main gate and let in the Greek soldiers waiting outside. These soldiers secretly came back while the Trojans were celebrating. Now the Greek army entered the city.</p><p>The Greeks spent ten years trying to take over the city of Troy. In the end, they succeeded in capturing it in just one night with a clever trick—and without any fighting.</p>`,
+                translation: `<p>士兵一步两个台阶地走下楼梯。"首领，他们走了，"他喊道，"希腊士兵都不见了，我看不到……"但首领没再听，他一步三个台阶地走上楼梯。几秒钟后，首领站在高高的特洛伊城的城墙上。他望向空荡荡的希腊营地，再远望，是空荡荡的大海。"他们走了，我们赢了，"他说，"希腊军队花了十年的时间试图攻占我们的城市。现在，他们乘船离开了并且带走了所有东西。"</p><p>"并非所有东西，长官。"士兵说道，"他们留下了那匹木马。"主城门外矗立着一匹巨大的木马。"啊，是的，"首领说，"那匹木马。它太大了，他们带不走。嗯，现在它是我们的了。找些帮手把它拉进城。这并不难，它下面有轮子。""但为什么它下面装着轮子呢？"士兵问道，首领打断了他，说道："你是个士兵，思考不是你的职责。你的职责是服从命令，我现在就给你下一道命令，把那匹木马移走！"</p><p>于是，特洛伊人把木马拖进了城。那天晚上，特洛伊人都在中心广场庆祝胜利。他们围着木马唱歌跳舞，还嘲笑愚蠢的希腊人。然后，他们确保所有的城门都锁好了，便去睡觉了。</p><p>到了午夜，中心广场空无一人，只剩下那匹巨大的木马。一些希腊士兵藏在里面。他们又等了一个小时，以确保万无一失。然后，他们小心翼翼地打开木马侧面的门，爬了出来。周围没有守卫，于是他们悄悄地向城门走去，打开城门，放进了城外等候的希腊士兵。这些希腊士兵是趁特洛伊人还在庆祝的时候秘密地回来的。现在他们进入了城中。</p><p>希腊人花了十年的时间试图攻占特洛伊城。最终，他们用一个巧妙的计谋，仅仅一个晚上就成功拿下了这座城，而且没有发生任何的战斗。</p>`
+            },
+            unit7: {
+                title: "Unit 7: Ways to improve your memory",
+                content: `<p>Your memory plays an important role in your life. It helps you remember who you are, where you live, what you have learnt and what you plan to do in the future. So, how can you improve your memory?</p><p>First, it is helpful to live a mentally active life. Make a point of trying new things. For example, you will exercise your brain if you learn to play a new instrument or learn a foreign language. You can also improve your memory with brain games, such as crosswords, word games and maths puzzles. Techniques like memory linking also work your brain and improve your memory. In memory linking, you make mental connections to help you remember things. For example, you can make up a story to link items in a list so that you will remember them. You will be exercising your brain as well as improving your memory!</p><p>Second, if you live a healthy life, your memory will work better. Healthy eating habits are especially important, and a healthy diet helps maintain a good memory. Research shows that eating green vegetables, nuts, berries, and oily fish can improve your ability to remember things. What's more, regular physical exercise and getting enough sleep also help improve your memory.</p><p>Last but not least, it is important to get plenty of rest. Unless you take time to relax, your brain will find it hard to remember things. Besides, if you get too stressed or worried, your memory will become less sharp. Everyone has moments of forgetfulness and memory tends to decline with age. Therefore, it is quite normal for people to experience memory loss as they get older. However, you can maintain and even improve your memory if you exercise your brain, live a healthy life and make time to relax!</p>`,
+                translation: `<p>记忆力在你的生活中扮演着重要角色。它帮助你记住自己是谁、住在哪里、学过什么以及未来计划做些什么。所以，如何提升记忆力呢？</p><p>第一，生活中保持脑力活跃是有帮助的。尝试新事物是关键。例如，学习弹奏一门新乐器或掌握一门外语可以锻炼大脑。你还可以通过益智游戏（如填字游戏、文字游戏和数学谜题）来提升记忆力。像"记忆联想法"这样的技巧也能锻炼大脑并增强记忆。在记忆联想法中，你可以通过建立脑联系来辅助记忆。例如，你可以编一个故事将清单中的物品串联起来，从而记住它们。这样既锻炼了大脑，又提升了记忆力！</p><p>第二，保持健康的生活方式能让记忆力更高效。健康的饮食习惯尤为重要，健康的饮食有助于维持良好的记忆力。研究表明，食用绿色蔬菜、坚果、浆果和富含油脂的鱼类可以提高记忆能力。此外，规律的锻炼和充足的睡眠也有助于改善记忆。</p><p>最后但同样重要的是，充分休息至关重要。除非花时间放松，否则大脑会难以记住信息。另外，若长期处于压力或焦虑中，记忆力也会变得迟钝。每个人都健忘的时候，记忆力会随着年龄增长而衰退。因此，人们随着年龄增长出现记忆力减退是正常现象。但如果保持锻炼大脑、保持健康生活并抽出时间放松，就能维持甚至提升记忆力！</p>`
+            },
+            unit8: {
+                title: "Unit 8: Keeping pet dogs",
+                content: `<p>"Keeping pet dogs is a good idea," says Li Li. "Having a dog is a good idea. There are lots of reasons for this. First, dogs are really cute and make great playmates. It's nice to hold them in our arms and play games with them. It's also wonderful to see them grow up. Second, we can learn responsibility from keeping dogs. We have to feed them, train them and play with them. According to my mum, this helps us become more responsible people and it can also teach young people how to care for others. Finally, a dog will love you faithfully and is always pleased to see you. These characteristics mean that owning a dog will bring you lots of happiness. In short, I think it's a good idea to have a dog."</p><p>"Keeping pet dogs is not a good idea," says Wang Meng. "It's not a good idea to have a dog. Pet dogs leave their hair on the floor, on beds and on sofas, and they need to be washed often. Dogs are noisy. Nearly all dogs bark at strangers. Some dogs bark more loudly than others. A few dogs bark all night. This can keep your neighbours awake at night! Not all dogs are friendly. A small number of pet dogs even attack people. What's more, it's common for people to live in flats. They have no choice but to keep their dogs inside most of the time. However, this is not good for dogs since they need fresh air and large open spaces where they can run free. Finally, owning a dog can be expensive. An owner needs to buy food and toys for his or her dog, and if the dog gets ill, it needs to be taken to the vet. Because of all these reasons, I would advise you not to get a dog as a pet."</p>`,
+                translation: `<p>"养宠物狗是一个好主意。"李莉说。"养狗是一个好主意。对此有很多的原因。首先，狗狗真的很可爱，是很好的玩伴。把他们抱在怀里和它们玩游戏是很棒的。看着它们长大，也是令人愉快的。第二，我们可以从养宠物狗中学到责任感。我们要喂养它们、训练它们，还要和它们玩。按妈妈所说，这帮助我们成为更有责任感的人，这也教年轻人如何照顾他人。最后，狗会忠诚地爱你，并且见到你总是很高兴。这些特征意味着拥有一只狗会给你带来很多幸福。总而言之，我认为养狗是个好主意。"</p><p>"养宠物狗不是一个好主意。"王蒙说。"养狗不是一个好主意。宠物狗会把它们的毛掉在地板上、床上和沙发上，并且它们需要经常清洗。狗很吵，几乎所有的狗都对陌生人叫，一些狗比另一些狗叫声更大。一些狗整夜叫，这会使你的邻居们整夜睡不着！不是所有的狗都友好，少数宠物狗甚至攻击人。另外，人们通常住在公寓里。大多数时候，他们除了把狗养在室内别无选择。但是，这样对狗不好，因为它们需要新鲜的空气和让它们能自由奔跑的开阔空间。最后，养一只狗可能花费很大。主人需要为他（她）的狗买食物和玩具，而且如果狗生病了，还需要带去看兽医。由于所有这些原因，我会建议你不要养狗做宠物。"</p>`
+            }
+        };
+
+        // 当前练习数据
+        let currentExercise = {
+            passage: '',
+            answers: [],
+            correctAnswers: [],
+            options: [],
+            originalWords: []
+        };
+
+        // DOM元素
+        const unitSelect = document.getElementById('unit-select');
+        const blankCountInput = document.getElementById('blank-count');
+        const generateBtn = document.getElementById('generate-btn');
+        const exerciseContainer = document.getElementById('exercise-container');
+        const passageElement = document.getElementById('passage');
+        const submitBtn = document.getElementById('submit-btn');
+        const resultsElement = document.getElementById('results');
+        const scoreElement = document.getElementById('score');
+        const translationElement = document.getElementById('translation');
+        const correctAnswersList = document.getElementById('correct-answers-list');
+        const loadingElement = document.getElementById('loading');
+
+        // 生成练习
+        generateBtn.addEventListener('click', function() {
+            const unit = unitSelect.value;
+            const blankCount = parseInt(blankCountInput.value);
+            
+            if (blankCount < 5 || blankCount > 25) {
+                alert('挖空数量必须在5到25之间');
+                return;
+            }
+            
+            generateExercise(unit, blankCount);
+        });
+
+        // 提交答案
+        submitBtn.addEventListener('click', function() {
+            checkAnswers();
+        });
+
+        // 生成练习函数 - 修复版本
+        function generateExercise(unit, blankCount) {
+            loadingElement.classList.remove('hidden');
+            exerciseContainer.classList.remove('hidden');
+            resultsElement.classList.add('hidden');
+            passageElement.innerHTML = '';
+            
+            // 使用setTimeout让UI有机会更新显示加载状态
+            setTimeout(() => {
+                const passageData = passages[unit];
+                
+                // 创建临时元素来解析HTML内容
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = passageData.content;
+                const paragraphs = tempDiv.querySelectorAll('p');
+                
+                // 处理每个段落，提取单词和位置信息
+                let allWords = [];
+                let paragraphWords = [];
+                
+                paragraphs.forEach((p, pIndex) => {
+                    const text = p.textContent;
+                    // 使用更智能的分词方法，保留标点符号
+                    const words = text.split(/(\s+)/).filter(w => w.trim().length > 0);
+                    
+                    const paraWords = words.map((word, wIndex) => {
+                        // 清理单词（移除标点符号用于挖空）
+                        const cleanWord = word.replace(/[.,?!;:'"()]/g, '');
+                        const isEligible = cleanWord.length >= 3 && /[a-zA-Z]/.test(cleanWord);
+                        
+                        const wordObj = {
+                            original: word,
+                            clean: cleanWord,
+                            paragraph: pIndex,
+                            position: wIndex,
+                            isEligible: isEligible
+                        };
+                        
+                        if (isEligible) {
+                            allWords.push({
+                                ...wordObj,
+                                globalIndex: allWords.length
+                            });
+                        }
+                        
+                        return wordObj;
+                    });
+                    
+                    paragraphWords.push(paraWords);
+                });
+                
+                // 随机选择要挖空的单词
+                const blankIndices = [];
+                const eligibleWords = [...allWords];
+                
+                // 确保不超过可用单词数量
+                const actualBlankCount = Math.min(blankCount, eligibleWords.length);
+                
+                while (blankIndices.length < actualBlankCount && eligibleWords.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * eligibleWords.length);
+                    const selectedWord = eligibleWords.splice(randomIndex, 1)[0];
+                    blankIndices.push(selectedWord.globalIndex);
+                }
+                
+                blankIndices.sort((a, b) => a - b);
+                
+                // 生成每个空位的选项
+                const correctAnswers = [];
+                const options = [];
+                const originalWords = [];
+                
+                blankIndices.forEach(index => {
+                    const wordObj = allWords[index];
+                    const correctWord = wordObj.clean;
+                    correctAnswers.push(correctWord);
+                    originalWords.push(wordObj.original);
+                    
+                    // 生成3个干扰选项
+                    const wrongOptions = [];
+                    const similarWords = allWords.filter(w => 
+                        w.clean.length >= 3 && 
+                        w.clean !== correctWord && 
+                        Math.abs(w.clean.length - correctWord.length) <= 2
+                    );
+                    
+                    while (wrongOptions.length < 3 && similarWords.length > 0) {
+                        const randomIndex = Math.floor(Math.random() * similarWords.length);
+                        const selectedWord = similarWords.splice(randomIndex, 1)[0].clean;
+                        
+                        if (!wrongOptions.includes(selectedWord) && selectedWord !== correctWord) {
+                            wrongOptions.push(selectedWord);
+                        }
+                    }
+                    
+                    // 如果相似单词不够，使用随机单词
+                    while (wrongOptions.length < 3) {
+                        const randomWord = allWords[Math.floor(Math.random() * allWords.length)].clean;
+                        if (randomWord !== correctWord && !wrongOptions.includes(randomWord)) {
+                            wrongOptions.push(randomWord);
+                        }
+                    }
+                    
+                    // 合并正确选项和干扰选项，并随机排序
+                    const allOptions = [correctWord, ...wrongOptions];
+                    for (let i = allOptions.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [allOptions[i], allOptions[j]] = [allOptions[j], allOptions[i]];
+                    }
+                    
+                    options.push(allOptions);
+                });
+                
+                // 构建带有下拉框的课文
+                let passageHTML = '';
+                let globalWordIndex = 0;
+                
+                paragraphWords.forEach((para, pIndex) => {
+                    let paraHTML = '<p>';
+                    
+                    para.forEach(wordObj => {
+                        // 检查这个单词是否被挖空
+                        const blankIndex = blankIndices.findIndex(idx => allWords[idx].clean === wordObj.clean && 
+                                                                       allWords[idx].paragraph === pIndex &&
+                                                                       allWords[idx].position === wordObj.position);
+                        
+                        if (blankIndex !== -1 && wordObj.isEligible) {
+                            paraHTML += `<span class="blank">
+                                <select class="blank-select" data-index="${blankIndex}">
+                                    <option value="">选择答案</option>
+                                    ${options[blankIndex].map(opt => 
+                                        `<option value="${opt}">${opt}</option>`
+                                    ).join('')}
+                                </select>
+                            </span>`;
+                            globalWordIndex++;
+                        } else {
+                            // 不是挖空单词，直接显示
+                            paraHTML += wordObj.original + ' ';
+                        }
+                    });
+                    
+                    paraHTML += '</p>';
+                    passageHTML += paraHTML;
+                });
+                
+                passageElement.innerHTML = passageHTML;
+                
+                // 保存当前练习数据
+                currentExercise = {
+                    passage: passageData,
+                    answers: new Array(actualBlankCount).fill(''),
+                    correctAnswers,
+                    options,
+                    originalWords,
+                    blankIndices
+                };
+                
+                loadingElement.classList.add('hidden');
+            }, 100);
+        }
+
+        // 检查答案函数
+        function checkAnswers() {
+            const selectElements = document.querySelectorAll('.blank-select');
+            let score = 0;
+            
+            selectElements.forEach((select, index) => {
+                const userAnswer = select.value;
+                const correctAnswer = currentExercise.correctAnswers[index];
+                
+                currentExercise.answers[index] = userAnswer;
+                
+                if (userAnswer === correctAnswer) {
+                    select.classList.add('correct');
+                    select.classList.remove('incorrect');
+                    score++;
+                } else {
+                    select.classList.add('incorrect');
+                    select.classList.remove('correct');
+                    
+                    // 找到正确选项并标记
+                    const options = select.options;
+                    for (let i = 0; i < options.length; i++) {
+                        if (options[i].value === correctAnswer) {
+                            options[i].classList.add('highlight');
+                            break;
+                        }
+                    }
+                }
+                
+                // 禁用所有下拉框
+                select.disabled = true;
+            });
+            
+            // 显示结果
+            const percentage = Math.round((score / currentExercise.correctAnswers.length) * 100);
+            scoreElement.textContent = `得分: ${score}/${currentExercise.correctAnswers.length} (${percentage}%)`;
+            
+            // 显示正确答案列表
+            let answersHTML = '';
+            currentExercise.correctAnswers.forEach((answer, index) => {
+                const userAnswer = currentExercise.answers[index];
+                const originalWord = currentExercise.originalWords[index];
+                
+                answersHTML += `<div class="answer-item">
+                    第${index + 1}题: <strong>${answer}</strong> (原文: ${originalWord})
+                    ${userAnswer !== answer ? `<span class="error-highlight"> (你的答案: ${userAnswer || '未作答'})</span>` : ''}
+                </div>`;
+            });
+            correctAnswersList.innerHTML = answersHTML;
+            
+            // 显示翻译，保持段落结构
+            translationElement.innerHTML = currentExercise.passage.translation;
+            
+            // 显示结果区域
+            resultsElement.classList.remove('hidden');
+            
+            // 滚动到结果区域
+            resultsElement.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 监听下拉框选择变化
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('blank-select')) {
+                const index = parseInt(e.target.getAttribute('data-index'));
+                currentExercise.answers[index] = e.target.value;
+            }
+        });
+    </script>
+</body>
+</html>
